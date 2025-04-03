@@ -162,18 +162,34 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Start the template engine service:
+1. Start both the API and web interface:
 ```bash
-python main.py
+python run.py
 ```
 
-2. The service will be available at http://localhost:8501
+This will start:
+- Web interface at http://localhost:8502
+- API server at http://localhost:8501
 
-3. To generate a resume:
+Or run them separately:
+```bash
+# Run just the API server
+python api.py
+
+# Run just the web interface
+streamlit run app.py
+```
+
+2. Using the Web Interface:
+   - Open http://localhost:8502 in your browser
    - Submit your resume data in JSON format
    - Select a template
-   - Choose output format
-   - Generate and download the formatted resume
+   - Generate and download your resume
+
+3. Using the API:
+   - API documentation available at http://localhost:8501/docs
+   - Send requests to http://localhost:8501/generate
+   - See the API Integration section below for examples
 
 ## Template Format
 
@@ -264,19 +280,64 @@ The template engine accepts resume data in the following JSON format:
 
 ## API Integration
 
-The template engine can be integrated with other services via its REST API:
+The template engine provides a REST API that can be integrated with other services. The API server runs on port 8501 by default.
 
-```python
-import requests
+### Endpoints
 
-response = requests.post('http://localhost:8501/generate', 
-    json={
-        'template': 'modern',
-        'format': 'pdf',
-        'data': your_resume_data
-    }
-)
+1. **Generate Resume** - `POST /generate`
+   ```python
+   import requests
+   
+   response = requests.post('http://localhost:8501/generate', 
+       json={
+           'template': 'modern',
+           'format': 'pdf',
+           'data': your_resume_data
+       }
+   )
+   
+   # Save the PDF
+   with open('resume.pdf', 'wb') as f:
+       f.write(response.content)
+   ```
+
+2. **List Templates** - `GET /templates`
+   ```python
+   response = requests.get('http://localhost:8501/templates')
+   available_templates = response.json()['templates']
+   ```
+
+3. **Health Check** - `GET /health`
+   ```python
+   response = requests.get('http://localhost:8501/health')
+   status = response.json()['status']  # Returns "healthy" if service is running
+   ```
+
+### Running the Services
+
+You can run both the web interface and API server using:
+```bash
+python run.py
 ```
+
+This will start:
+- API server on port 8501
+- Web interface on port 8502
+
+Or run them separately:
+```bash
+# Run just the API server
+python api.py
+
+# Run just the web interface
+streamlit run app.py
+```
+
+### API Documentation
+
+Once the API server is running, you can access the interactive API documentation at:
+- Swagger UI: http://localhost:8501/docs
+- ReDoc: http://localhost:8501/redoc
 
 ## Contributing
 
