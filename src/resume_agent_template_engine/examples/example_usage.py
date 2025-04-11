@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import json
-from templates.template_manager import TemplateManager
-from resume_template_editing import TemplateEditing
+from typing import Dict, List, Any
+from resume_agent_template_engine.templates.template_manager import TemplateManager
+from resume_agent_template_engine.core.resume_template_editing import TemplateEditing
 
-def main():
+def main() -> None:
     # Sample resume data
-    resume_data = {
+    resume_data: Dict[str, Any] = {
         "personalInfo": {
             "name": "John Doe",
             "email": "john.doe@example.com",

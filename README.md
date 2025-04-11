@@ -1,435 +1,198 @@
-# Resume AI Agent - Template Engine
+# Resume Agent Template Engine
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+A powerful template engine for generating professional resumes and cover letters using LaTeX.
 
-Part of the Resume AI Agent project by [Fenil Sonani](https://fenilsonani.com). This component handles the generation of professional resumes using customizable templates and JSON data.
-
-## About Resume AI Agent Template Engine
-
-The Template Engine is a crucial component of the Resume AI Agent ecosystem, designed to transform structured resume data into beautifully formatted documents. It provides a flexible templating system that supports multiple output formats and styling options.
-
-### Project Components
-
-The Resume AI Agent project consists of several integrated components:
-
-- **Template Engine** (this repository) - Converts structured resume data into formatted documents
-- **Resume AI** - Intelligent resume analysis and optimization
-- **Data Manager** - Handles resume data storage and validation
-- **Web Interface** - User-friendly web application for resume management
-
-Visit [fenilsonani.com](https://fenilsonani.com) to learn more about the complete Resume AI Agent project.
+[![CI/CD](https://github.com/yourusername/resume-agent-template-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/resume-agent-template-engine/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/yourusername/resume-agent-template-engine/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/resume-agent-template-engine)
 
 ## Features
 
-- Convert structured resume data into formatted documents
-- Multiple template options with customizable styles
-- Support for various output formats (PDF, HTML, etc.)
-- Easy-to-use template creation system
-- Real-time preview capabilities
-- Extensible template architecture
-- Built-in validation and error handling
+- **Multiple Template Support**: Choose from a variety of professionally designed templates
+- **Dynamic Content Generation**: Automatically generate content based on user input
+- **LaTeX-based Templates**: High-quality, customizable templates
+- **RESTful API**: Easy integration with other applications
+- **Template Preview**: Preview templates before generating the final document
+- **Cover Letter Support**: Generate matching cover letters for your resume
+- **Customizable Sections**: Add, remove, or modify sections as needed
 
-## Prerequisites
+## Project Structure
 
-### System Requirements
+```
+resume-agent-template-engine/
+├── src/
+│   └── resume_agent_template_engine/
+│       ├── core/
+│       │   ├── resume_template_editing.py
+│       │   └── template_utils.py
+│       ├── templates/
+│       │   ├── resume/
+│       │   │   └── [template_name]/
+│       │   │       ├── template.tex
+│       │   │       ├── helper.py
+│       │   │       ├── preview.png
+│       │   │       └── README.md
+│       │   └── cover_letter/
+│       │       └── [template_name]/
+│       │           ├── template.tex
+│       │           ├── helper.py
+│       │           ├── preview.png
+│       │           └── README.md
+│       ├── api/
+│       │   ├── app.py
+│       │   └── routes.py
+│       └── examples/
+│           └── example_usage.py
+├── tests/
+├── docs/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── requirements.txt
+└── run.py
+```
 
-- Python 3.8 or higher
-- pip package manager
-- LaTeX distribution (for PDF output)
+## System Requirements
 
-### Installing LaTeX
-
-For PDF output support, a LaTeX distribution is required. Here's how to install it on different platforms:
-
-#### macOS
-
-1. Install MacTeX (recommended):
-   ```bash
-   # Using Homebrew
-   brew install --cask mactex
-   
-   # OR download and install manually from:
-   # https://www.tug.org/mactex/
-   ```
-
-2. After installation, verify LaTeX is installed:
-   ```bash
-   pdflatex --version
-   ```
-
-3. Install additional packages (if needed):
-   ```bash
-   sudo tlmgr update --self
-   sudo tlmgr install collection-fontsrecommended
-   ```
-
-#### Windows
-
-1. Install MiKTeX:
-   - Download the installer from [MiKTeX website](https://miktex.org/download)
-   - Run the installer and follow the installation wizard
-   - Choose "Install missing packages on the fly" when prompted
-
-2. After installation:
-   - Open MiKTeX Console
-   - Go to Updates and install any available updates
-   - Verify installation by opening Command Prompt and typing:
-     ```cmd
-     pdflatex --version
-     ```
-
-#### Linux (Ubuntu/Debian)
-
-1. Install TeX Live (full installation recommended):
-   ```bash
-   sudo apt update
-   sudo apt install texlive-full
-   sudo apt install texlive-latex-extra
-   ```
-
-2. Install additional tools:
-   ```bash
-   sudo apt install latexmk
-   ```
-
-3. Verify installation:
-   ```bash
-   pdflatex --version
-   ```
-
-#### Linux (Fedora)
-
-1. Install TeX Live:
-   ```bash
-   sudo dnf install texlive-scheme-full
-   sudo dnf install latexmk
-   ```
-
-2. Verify installation:
-   ```bash
-   pdflatex --version
-   ```
-
-#### Linux (Arch)
-
-1. Install TeX Live:
-   ```bash
-   sudo pacman -S texlive-most texlive-lang
-   sudo pacman -S latexmk
-   ```
-
-2. Verify installation:
-   ```bash
-   pdflatex --version
-   ```
-
-### Troubleshooting LaTeX Installation
-
-1. If you encounter missing package errors:
-   - On MacTeX/TeX Live:
-     ```bash
-     sudo tlmgr install [package-name]
-     ```
-   - On MiKTeX: The package will be installed automatically when needed
-
-2. Common issues:
-   - **Path not found**: Add LaTeX binaries to your system PATH
-   - **Permission errors**: Run package manager with sudo/admin privileges
-   - **Missing fonts**: Install `collection-fontsrecommended`
+- Python 3.8+
+- LaTeX distribution (MiKTeX, TeX Live, or MacTeX)
+- Required Python packages (see requirements.txt)
 
 ## Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/your-username/resume-agent-template-engine.git
-cd resume-agent-template-engine
-```
+   ```bash
+   git clone https://github.com/yourusername/resume-agent-template-engine.git
+   cd resume-agent-template-engine
+   ```
 
-2. Create and activate a virtual environment (optional but recommended):
-```bash
-python -m venv .venv
-# On Windows
-.venv\Scripts\activate
-# On macOS/Linux
-source .venv/bin/activate
-```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
-3. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Install LaTeX:
+   - **Windows**: Install [MiKTeX](https://miktex.org/download)
+   - **macOS**: Install [MacTeX](https://www.tug.org/mactex/)
+   - **Linux**: Install TeX Live:
+     ```bash
+     sudo apt-get install texlive-full
+     ```
 
 ## Usage
 
-1. Start both the API and web interface:
-```bash
-python run.py
-```
+1. Start the server:
+   ```bash
+   python run.py
+   ```
 
-This will start:
-- Web interface at http://localhost:8502
-- API server at http://localhost:8501
+2. Access the API:
+   - Resume generation: `http://localhost:8501/generate-resume`
+   - Cover letter generation: `http://localhost:8501/generate-cover-letter`
+   - Template preview: `http://localhost:8501/preview-template`
 
-Or run them separately:
-```bash
-# Run just the API server
-python api.py
-
-# Run just the web interface
-streamlit run app.py
-```
-
-2. Using the Web Interface:
-   - Open http://localhost:8502 in your browser
-   - Submit your resume data in JSON format
-   - Select a template
-   - Generate and download your resume
-
-3. Using the API:
-   - API documentation available at http://localhost:8501/docs
-   - Send requests to http://localhost:8501/generate
-   - See the API Integration section below for examples
+3. Example API request:
+   ```bash
+   curl -X POST http://localhost:8501/generate-resume \
+     -H "Content-Type: application/json" \
+     -d '{
+       "template": "modern",
+       "data": {
+         "professional_summary": "...",
+         "education": [...],
+         "experience": [...],
+         "projects": [...],
+         "articles_and_publications": [...],
+         "achievements": [...],
+         "certifications": [...],
+         "technologies_and_skills": [...]
+       }
+     }'
+   ```
 
 ## Template Format
 
-Templates are written in a combination of LaTeX and HTML, with special placeholders for dynamic content. Here's the basic structure:
+Templates are organized in two main categories:
+1. **Resume Templates**: Located in `templates/resume/`
+2. **Cover Letter Templates**: Located in `templates/cover_letter/`
 
-```
-template/
-├── basic/
-│   ├── template.tex
-│   ├── style.sty
-│   └── preview.png
-├── modern/
-│   ├── template.html
-│   ├── style.css
-│   └── preview.png
-└── ...
-```
+Each template directory contains:
+- `template.tex`: The main LaTeX template file
+- `helper.py`: Template-specific helper functions
+- `preview.png`: Template preview image
+- `README.md`: Template-specific documentation
 
 ## Data Format
 
-The template engine accepts resume data in the following JSON format:
+The template engine expects data in the following format:
 
 ```json
 {
-  "personalInfo": {
-    "name": "John Doe",
-    "email": "john.doe@example.com",
-    "phone": "+1 (123) 456-7890",
-    "location": "San Francisco, CA",
-    "links": [
+  "template": "template_name",
+  "data": {
+    "professional_summary": "string",
+    "education": [
       {
-        "title": "LinkedIn",
-        "url": "https://linkedin.com/in/johndoe"
-      },
-      {
-        "title": "GitHub",
-        "url": "https://github.com/johndoe"
+        "degree": "string",
+        "institution": "string",
+        "location": "string",
+        "date": "string",
+        "details": ["string"]
       }
-    ]
-  },
-  "professionalSummary": "Your professional summary text here...",
-  "education": [
-    {
-      "degree": "Bachelor of Science",
-      "institution": "Example University",
-      "startDate": "Sep 2018",
-      "endDate": "May 2022",
-      "focus": "Computer Science"
-    }
-  ],
-  "experience": [
-    {
-      "title": "Software Engineer",
-      "company": "Example Company",
-      "startDate": "Jun 2022",
-      "endDate": "Present",
-      "achievements": [
-        "Achievement 1",
-        "Achievement 2"
-      ]
-    }
-  ],
-  "skills": [
-    {
-      "category": "Programming Languages",
-      "skills": ["Python", "JavaScript", "TypeScript"]
-    }
-  ]
+    ],
+    "experience": [
+      {
+        "title": "string",
+        "company": "string",
+        "location": "string",
+        "date": "string",
+        "details": ["string"]
+      }
+    ],
+    "projects": [
+      {
+        "name": "string",
+        "description": "string",
+        "technologies": ["string"]
+      }
+    ],
+    "articles_and_publications": [
+      {
+        "title": "string",
+        "publisher": "string",
+        "date": "string",
+        "url": "string"
+      }
+    ],
+    "achievements": ["string"],
+    "certifications": [
+      {
+        "name": "string",
+        "issuer": "string",
+        "date": "string"
+      }
+    ],
+    "technologies_and_skills": ["string"]
+  }
 }
 ```
 
-## Creating New Templates
+## Development
 
-1. Create a new directory in the `templates` folder with your template name
-2. Add the required files:
-   * `template.tex` or `template.html` - Main template file
-   * `style.sty` or `style.css` - Styling definitions
-   * `preview.png` - Template preview image
-3. Define placeholders using the standard format:
-   * `{{personal_info}}` - For personal details
-   * `{{professional_summary}}`
-   * `{{education}}`
-   * `{{experience}}`
-   * `{{skills}}`
-4. Add template metadata in `template.json`
-5. Update the template registry
-6. Add tests for the new template
+The project uses GitHub Actions for continuous integration and deployment. The workflow includes:
 
-## API Integration
+- Running tests across Python 3.9, 3.10, and 3.11
+- Code coverage reporting
+- Linting with black and mypy
+- Package building
 
-The template engine provides a REST API that can be integrated with other services. The API server runs on port 8501 by default.
-
-### Endpoints
-
-1. **Generate Resume** - `POST /generate`
-   ```python
-   import requests
-   
-   response = requests.post('http://localhost:8501/generate', 
-       json={
-           'template': 'modern',
-           'format': 'pdf',
-           'data': your_resume_data
-       }
-   )
-   
-   # Save the PDF
-   with open('resume.pdf', 'wb') as f:
-       f.write(response.content)
-   ```
-
-2. **List Templates** - `GET /templates`
-   ```python
-   response = requests.get('http://localhost:8501/templates')
-   available_templates = response.json()['templates']
-   ```
-
-3. **Health Check** - `GET /health`
-   ```python
-   response = requests.get('http://localhost:8501/health')
-   status = response.json()['status']  # Returns "healthy" if service is running
-   ```
-
-### Running the Services
-
-You can run both the web interface and API server using:
-```bash
-python run.py
-```
-
-This will start:
-- API server on port 8501
-- Web interface on port 8502
-
-Or run them separately:
-```bash
-# Run just the API server
-python api.py
-
-# Run just the web interface
-streamlit run app.py
-```
-
-### API Documentation
-
-Once the API server is running, you can access the interactive API documentation at:
-- Swagger UI: http://localhost:8501/docs
-- ReDoc: http://localhost:8501/redoc
-
-## Contributing
-
-We welcome contributions! Please feel free to submit a Pull Request. Make sure to read the [Contribution Guidelines](CONTRIBUTING.md) first.
-
-## Security
-
-For security concerns, please review our [Security Policy](SECURITY.md).
+To contribute, please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Code of Conduct
-
-This project adheres to the Contributor Covenant Code of Conduct. By participating, you are expected to uphold this code. Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
-
-## Project Structure
-
-The template engine uses a structured organization for different document types and styles:
-
-```
-templates/
-├── template_manager.py       # Central manager for all templates
-├── resume/                   # Resume templates
-│   ├── classic/              # Classic style resume
-│   │   ├── helper.py         # Python helper class for the template
-│   │   └── classic.tex       # LaTeX template file
-│   └── [other_style]/        # Other resume styles...
-└── cover_letter/             # Cover letter templates
-    ├── basic/                # Basic style cover letter
-    │   ├── helper.py         # Python helper class for the template
-    │   └── basic.tex         # LaTeX template file
-    └── [other_style]/        # Other cover letter styles...
-```
-
-## How It Works
-
-1. Each template style is contained in its own directory with:
-   - A LaTeX template file (`.tex`) with placeholders for content
-   - A Python helper class (`helper.py`) that knows how to generate the content and fill the placeholders
-
-2. The `TemplateManager` class automatically discovers available templates and provides a unified interface for using them.
-
-3. The `TemplateEditing` class serves as the main entry point for generating documents with a specific template.
-
-## Adding a New Template
-
-To add a new template:
-
-1. Create a new directory under the appropriate category (e.g., `templates/resume/modern/`)
-2. Create a LaTeX template file (e.g., `modern.tex`) with placeholders for content
-3. Create a helper class in `helper.py` that implements:
-   - Methods to validate data
-   - Methods to generate content sections
-   - A method to replace placeholders
-   - A method to export to PDF
-
-The helper class should follow the same interface as existing templates.
-
-## Usage Example
-
-```python
-from templates.template_manager import TemplateManager
-from resume_template_editing import TemplateEditing
-
-# List available templates
-template_manager = TemplateManager()
-available_templates = template_manager.get_available_templates()
-print(available_templates)  # {'resume': ['classic'], 'cover_letter': ['basic']}
-
-# Create resume data (JSON format)
-resume_data = {
-    "personalInfo": {
-        "name": "John Doe",
-        "email": "john.doe@example.com",
-        # ... other required fields ...
-    },
-    # ... other sections ...
-}
-
-# Generate a resume
-editor = TemplateEditing(resume_data, "resume", "classic")
-pdf_path = editor.export_to_pdf("my_resume.pdf")
-print(f"Resume generated: {pdf_path}")
-```
-
-## Requirements
-
-- Python 3.7+
-- LaTeX installation with `pdflatex`
-
-## License
-
-MIT License 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
