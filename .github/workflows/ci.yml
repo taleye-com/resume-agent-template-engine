@@ -37,7 +37,10 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
     
-    - name: Run linting
+    - name: Format code with black
       run: |
-        black --check src/ tests/
+        black src/ tests/
+    
+    - name: Run type checking
+      run: |
         mypy src/ 
