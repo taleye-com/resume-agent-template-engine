@@ -43,4 +43,4 @@ jobs:
     
     - name: Run type checking
       run: |
-        mypy src/ 
+        mypy --namespace-packages src/ 
