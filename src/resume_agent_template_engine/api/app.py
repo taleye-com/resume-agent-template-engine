@@ -82,7 +82,16 @@ def validate_resume_data(data: Dict[str, Any]):
 
 @app.post("/generate")
 async def generate_document(request: DocumentRequest, background_tasks: BackgroundTasks):
-    """Generate a resume or cover letter from the provided JSON data using the specified template."""
+    """
+    Generate a resume or cover letter from the provided JSON data using the specified template.
+
+    Args:
+        request: DocumentRequest object containing document type, template choice, format, and data
+        background_tasks: BackgroundTasks object to add cleanup tasks
+        
+    Returns:
+        FileResponse containing the generated document
+    """
     try:
         # Validate data format
         validate_resume_data(request.data)
