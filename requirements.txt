@@ -1,12 +1,14 @@
-streamlit==1.32.0
+streamlit==1.21.0
 pytest>=8.0.0
 black>=24.2.0
 flake8>=7.0.0
 isort>=5.13.0
 python-dotenv>=1.0.0
-fastapi>=0.110.0
-uvicorn>=0.27.1
-python-multipart>=0.0.9
+fastapi==0.95.0
+uvicorn==0.22.0
+python-multipart==0.0.6
+Pillow==9.5.0
+jinja2==3.1.2
 # LaTeX dependencies - make sure you have LaTeX installed on your system
 # For macOS: brew install --cask mactex
 # For Ubuntu: sudo apt-get install texlive-full

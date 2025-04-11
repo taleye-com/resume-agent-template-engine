@@ -353,4 +353,83 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Code of Conduct
 
-This project adheres to the Contributor Covenant Code of Conduct. By participating, you are expected to uphold this code. Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details. 
+This project adheres to the Contributor Covenant Code of Conduct. By participating, you are expected to uphold this code. Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
+
+## Project Structure
+
+The template engine uses a structured organization for different document types and styles:
+
+```
+templates/
+├── template_manager.py       # Central manager for all templates
+├── resume/                   # Resume templates
+│   ├── classic/              # Classic style resume
+│   │   ├── helper.py         # Python helper class for the template
+│   │   └── classic.tex       # LaTeX template file
+│   └── [other_style]/        # Other resume styles...
+└── cover_letter/             # Cover letter templates
+    ├── basic/                # Basic style cover letter
+    │   ├── helper.py         # Python helper class for the template
+    │   └── basic.tex         # LaTeX template file
+    └── [other_style]/        # Other cover letter styles...
+```
+
+## How It Works
+
+1. Each template style is contained in its own directory with:
+   - A LaTeX template file (`.tex`) with placeholders for content
+   - A Python helper class (`helper.py`) that knows how to generate the content and fill the placeholders
+
+2. The `TemplateManager` class automatically discovers available templates and provides a unified interface for using them.
+
+3. The `TemplateEditing` class serves as the main entry point for generating documents with a specific template.
+
+## Adding a New Template
+
+To add a new template:
+
+1. Create a new directory under the appropriate category (e.g., `templates/resume/modern/`)
+2. Create a LaTeX template file (e.g., `modern.tex`) with placeholders for content
+3. Create a helper class in `helper.py` that implements:
+   - Methods to validate data
+   - Methods to generate content sections
+   - A method to replace placeholders
+   - A method to export to PDF
+
+The helper class should follow the same interface as existing templates.
+
+## Usage Example
+
+```python
+from templates.template_manager import TemplateManager
+from resume_template_editing import TemplateEditing
+
+# List available templates
+template_manager = TemplateManager()
+available_templates = template_manager.get_available_templates()
+print(available_templates)  # {'resume': ['classic'], 'cover_letter': ['basic']}
+
+# Create resume data (JSON format)
+resume_data = {
+    "personalInfo": {
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        # ... other required fields ...
+    },
+    # ... other sections ...
+}
+
+# Generate a resume
+editor = TemplateEditing(resume_data, "resume", "classic")
+pdf_path = editor.export_to_pdf("my_resume.pdf")
+print(f"Resume generated: {pdf_path}")
+```
+
+## Requirements
+
+- Python 3.7+
+- LaTeX installation with `pdflatex`
+
+## License
+
+MIT License 
