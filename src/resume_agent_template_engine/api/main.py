@@ -4,8 +4,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional, List
 import os
 import json
-from resume_template_editing import TemplateEditing
-from templates.template_manager import TemplateManager
+from resume_agent_template_engine.core.resume_template_editing import TemplateEditing
+from resume_agent_template_engine.templates.template_manager import TemplateManager
 import tempfile
 import uvicorn
 from enum import Enum

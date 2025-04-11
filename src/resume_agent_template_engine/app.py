@@ -1,10 +1,14 @@
 import streamlit as st
 import os
 import json
-from resume_template_editing import TemplateEditing
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from resume_agent_template_engine.core.resume_template_editing import TemplateEditing
 from templates.template_manager import TemplateManager
 import base64
 from PIL import Image
+
+app = FastAPI()
 
 # Set page config
 st.set_page_config(
