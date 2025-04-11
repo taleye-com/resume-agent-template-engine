@@ -1,6 +1,8 @@
 import re
 import os
-from templates.template_manager import TemplateManager
+import json
+from resume_agent_template_engine.templates.template_manager import TemplateManager
+import tempfile
 
 class TemplateEditing:
     """
