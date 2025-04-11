@@ -1,0 +1,129 @@
+\documentclass[10pt, letterpaper]{article}
+
+% ------------------------------------------------------------------------------
+% PACKAGES AND CONFIGURATIONS (Same as resume)
+% ------------------------------------------------------------------------------
+\usepackage[
+    ignoreheadfoot,
+    top=0.8cm,
+    bottom=0.8cm,
+    left=0.8cm,
+    right=0.8cm,
+    footskip=0.5cm
+]{geometry}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{primaryColor}{RGB}{0, 0, 0}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{amsmath}
+\usepackage[
+    pdftitle={Fenil Sonani's Cover Letter},
+    pdfauthor={Fenil Sonani},
+    pdfcreator={Fenil Sonani},
+    colorlinks=true,
+    urlcolor=primaryColor
+]{hyperref}
+\usepackage[pscoord]{eso-pic}
+\usepackage{calc}
+\usepackage{bookmark}
+\usepackage{lastpage}
+\usepackage{changepage}
+\usepackage{paracol}
+\usepackage{ifthen}
+\usepackage{needspace}
+\usepackage{iftex}
+
+% Ensure generated PDF is ATS parsable:
+\ifPDFTeX
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\fi
+
+\usepackage{charter}
+
+\raggedright
+\AtBeginEnvironment{adjustwidth}{\partopsep0pt}
+\pagestyle{empty}
+\setcounter{secnumdepth}{0}
+\setlength{\parindent}{0pt} % No indentation for paragraphs
+\setlength{\parskip}{0.5em} % Add space between paragraphs
+\setlength{\topskip}{0pt}
+\setlength{\columnsep}{0.15cm}
+\pagenumbering{gobble}
+
+\titleformat{\section}{\needspace{4\baselineskip}\bfseries\large}{}{0pt}{}[\vspace{1pt}\titlerule]
+\titlespacing{\section}{-1pt}{0.3cm}{0.2cm}
+
+\newsavebox\ANDbox
+\sbox\ANDbox{$|$}
+\newcommand{\AND}{\unskip
+        \cleaders\copy\ANDbox\hskip\wd\ANDbox
+        \ignorespaces
+}
+
+% Static header (same as resume)
+\newenvironment{header}{
+    \setlength{\topsep}{0pt}\par\kern\topsep\centering\linespread{1.5}
+}{
+    \par\kern\topsep
+}
+
+\begin{document}
+
+    %========================
+    % STATIC HEADER
+    %========================
+    \begin{header}
+        \fontsize{25pt}{25pt}\selectfont {{name}}
+
+        \vspace{2pt}
+
+        \normalsize
+        \mbox{ {{location}} }%
+        \kern 3pt
+        \AND
+        \kern 5pt
+        \mbox{\href{mailto:{{email}}}{{{email}}}}%
+        \kern 3pt
+        \AND
+        \kern 3pt
+        \mbox{\href{tel:{{phone}}}{{{phone}}}}%
+        \kern 3pt
+        \AND
+        \kern 3pt
+        \mbox{\href{ {{website}} }{ {{website_display}} }}%
+    \end{header}
+
+    %========================
+    % DYNAMIC CONTENT
+    %========================
+    \vspace{0.5cm}
+    \begin{flushleft}
+        {{recipient_address}}
+    \end{flushleft}
+
+    \vspace{0.2cm}
+    \begin{flushright}
+        {{date}}
+    \end{flushright}
+
+    \vspace{0.5cm}
+    {{salutation}}
+
+    \vspace{0.3cm}
+    {{body_content}}
+
+    \vspace{0.5cm}
+    \begin{flushleft}
+        {{closing}} \\
+        \vspace{0.2cm}
+        {{name}}
+    \end{flushleft}
+
+\end{document} 

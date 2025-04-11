@@ -1,0 +1,3 @@
+"""
+Cover letter templates package.
+""" 

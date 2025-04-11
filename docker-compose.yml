@@ -1,0 +1,23 @@
+services:
+  resume-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILDKIT_PROGRESS: plain
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./output:/app/output
+      - ./src/resume_agent_template_engine/templates:/app/templates
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s 

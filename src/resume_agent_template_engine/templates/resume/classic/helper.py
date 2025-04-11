@@ -2,34 +2,31 @@ import re
 import subprocess
 import os
 import tempfile
+from typing import Dict, Any
 
-class TemplateEditing:
+class ClassicResumeTemplate:
     """
-    A class to generate a LaTeX resume from JSON data based on new requirements.
+    Helper class for generating a Classic LaTeX resume from JSON data.
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: dict, template_name: str, templates_dir: str = "templates"):
+    def __init__(self, data: Dict[str, Any]) -> None:
         """
-        Initialize the TemplateEditing class.
+        Initialize the ClassicResumeTemplate class.
 
         Args:
             data (dict): The JSON data containing resume information.
-            template_name (str): The name of the template file (without extension).
-            templates_dir (str): The directory containing the template files.
         """
         self.data = self.replace_special_chars(data)
-        self.output_path = None
+        self.output_path: str = "output.pdf"
+        self.template_dir = os.path.dirname(os.path.abspath(__file__))
+        self.template_path = os.path.join(self.template_dir, "classic.tex")
         
-        template_path = os.path.join(templates_dir, f"{template_name}.tex")
-        if not os.path.exists(template_path):
-            raise FileNotFoundError(f"Template file not found: {template_path}")
-
         try:
-            with open(template_path, 'r', encoding='utf-8') as f:
+            with open(self.template_path, 'r', encoding='utf-8') as f:
                 self.template = f.read()
         except Exception as e:
-            raise IOError(f"Error reading template file {template_path}: {e}") from e
+            raise IOError(f"Error reading template file {self.template_path}: {e}") from e
 
         self.validate_data()
 
@@ -80,28 +77,8 @@ class TemplateEditing:
 
     def generate_personal_info(self):
         """Generate the Personal Information section."""
-        info = self.data["personalInfo"]
-        
-        # Basic info
-        basic_info = (
-            f"\\textbf{{\\Huge {info['name']}}}\n\n"
-            f"\\vspace{{0.25em}}\n"
-            f"\\textbf{{Location:}} {info['location']} \\quad "
-            f"\\textbf{{Email:}} \\href{{mailto:{info['email']}}}{{{info['email']}}} \\quad "
-            f"\\textbf{{Phone:}} {info['phone']}"
-        )
-        
-        # Additional links (if provided)
-        links = []
-        if "links" in info:
-            for link in info["links"]:
-                links.append(f"\\href{{{link['url']}}}{{{link['title']}}}")
-        
-        if links:
-            links_section = "\n\\vspace{0.25em}\n" + " \\quad ".join(links)
-            return f"\\begin{{onecolentry}}\n{basic_info}\n{links_section}\\end{{onecolentry}}"
-        
-        return f"\\begin{{onecolentry}}\n{basic_info}\\end{{onecolentry}}"
+        # This is handled in the LaTeX template header section
+        return ""
 
     def generate_professional_summary(self):
         """Generate the Professional Summary section."""
@@ -226,7 +203,7 @@ class TemplateEditing:
             
         return resume
 
-    def export_to_pdf(self, output_path: str = "output.pdf", clean_up: bool = True):
+    def export_to_pdf(self, output_path: str = "output.pdf") -> str:
         """Compile LaTeX content to PDF using pdflatex"""
         self.output_path = output_path
         content = self.generate_resume()
@@ -257,3 +234,5 @@ class TemplateEditing:
                 os.replace(pdf_path, output_path)
             else:
                 raise FileNotFoundError("PDF output not generated")
+            
+        return output_path

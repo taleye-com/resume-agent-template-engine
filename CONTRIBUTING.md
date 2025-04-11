@@ -67,9 +67,18 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ## Adding New Templates
 
-1. Create a new .tex file in the `templates` directory
-2. Follow the template structure as shown in existing templates
-3. Include all required placeholders:
+1. Create a new template directory in the appropriate category:
+   - For resumes: `templates/resume/[template_name]/`
+   - For cover letters: `templates/cover_letter/[template_name]/`
+
+2. Each template directory should contain:
+   - `template.tex` - The main template file
+   - `helper.py` - Template-specific helper functions
+   - `preview.png` - Template preview image
+   - `README.md` - Template-specific documentation
+
+3. Follow the template structure as shown in existing templates
+4. Include all required placeholders:
    * `{{professional_summary}}`
    * `{{education}}`
    * `{{experience}}`
@@ -78,7 +87,6 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
    * `{{achievements}}`
    * `{{certifications}}`
    * `{{technologies_and_skills}}`
-4. Add a preview image (.png) with the same name in `template_previews`
 5. Update documentation if needed
 6. Add tests for the new template
 
@@ -88,9 +96,28 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 2. Create a new branch for your feature
 3. Make your changes
 4. Write or update tests
-5. Run the test suite
-6. Push your changes
-7. Create a Pull Request
+5. Run the test suite:
+   ```bash
+   python -m pytest
+   ```
+6. Format your code:
+   ```bash
+   black .
+   mypy src/
+   ```
+7. Ensure all tests pass in the CI pipeline
+8. Push your changes
+9. Create a Pull Request
+
+## CI/CD Requirements
+
+All pull requests must pass the following checks:
+
+- Tests must pass on Python 3.9, 3.10, and 3.11
+- Code coverage must not decrease
+- Code must pass black formatting
+- Code must pass mypy type checking
+- Package must build successfully
 
 ## Setting Up Development Environment
 
@@ -104,17 +131,11 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
    ```bash
    pip install -r requirements.txt
    ```
-4. Install development dependencies:
+4. Install LaTeX if not already installed (see README.md for detailed instructions)
+5. Run the development server:
    ```bash
-   pip install -r requirements-dev.txt
+   python run.py
    ```
-5. Install LaTeX if not already installed
-
-## Running Tests
-
-```bash
-python -m pytest
-```
 
 ## Questions?
 
