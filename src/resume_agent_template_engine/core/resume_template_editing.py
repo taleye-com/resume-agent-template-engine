@@ -3,6 +3,7 @@ import os
 import json
 from resume_agent_template_engine.templates.template_manager import TemplateManager
 import tempfile
+from typing import Dict, Any, Optional
 
 class TemplateEditing:
     """
@@ -10,7 +11,7 @@ class TemplateEditing:
     Uses the new template management system.
     """
 
-    def __init__(self, data: dict, template_category: str, template_name: str):
+    def __init__(self, data: Dict[str, Any], template_category: str, template_name: str):
         """
         Initialize the TemplateEditing class.
 
@@ -22,7 +23,7 @@ class TemplateEditing:
         self.data = data
         self.template_category = template_category
         self.template_name = template_name
-        self.output_path = None
+        self.output_path: Optional[str] = None
         
         # Initialize the template manager
         self.template_manager = TemplateManager()

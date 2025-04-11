@@ -1,6 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
-from fastapi.background import BackgroundTask
 from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional, List
 import os
@@ -78,12 +77,13 @@ def validate_resume_data(data: Dict[str, Any]):
                 raise ValueError(f"Invalid end date format: {exp['endDate']}. Use YYYY-MM or YYYY-MM-DD")
 
 @app.post("/generate")
-async def generate_document(request: DocumentRequest):
+async def generate_document(request: DocumentRequest, background_tasks: BackgroundTasks):
     """
     Generate a resume or cover letter from the provided JSON data using the specified template.
     
     Args:
         request: DocumentRequest object containing document type, template choice, format, and data
+        background_tasks: BackgroundTasks object to add cleanup tasks
         
     Returns:
         FileResponse containing the generated document
@@ -127,17 +127,15 @@ async def generate_document(request: DocumentRequest):
             person_name = request.data.get('personalInfo', {}).get('name', 'output').replace(' ', '_')
             filename = f"{request.document_type}_{person_name}.pdf"
             
-            # Create a cleanup function
-            async def cleanup_file():
-                if os.path.exists(output_path):
-                    os.remove(output_path)
+            # Add cleanup task if requested
+            if request.clean_up:
+                background_tasks.add_task(os.remove, output_path)
             
             # Return the generated file
             return FileResponse(
                 output_path,
                 media_type='application/pdf',
-                filename=filename,
-                background=cleanup_file if request.clean_up else None
+                filename=filename
             )
         except Exception as e:
             # Clean up the temporary file if generation fails

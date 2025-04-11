@@ -2,6 +2,7 @@ import re
 import subprocess
 import os
 import tempfile
+from typing import Dict, Any
 
 class ClassicResumeTemplate:
     """
@@ -9,7 +10,7 @@ class ClassicResumeTemplate:
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: Dict[str, Any]) -> None:
         """
         Initialize the ClassicResumeTemplate class.
 
@@ -17,7 +18,7 @@ class ClassicResumeTemplate:
             data (dict): The JSON data containing resume information.
         """
         self.data = self.replace_special_chars(data)
-        self.output_path = None
+        self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
         self.template_path = os.path.join(self.template_dir, "classic.tex")
         

@@ -2,6 +2,7 @@ import re
 import subprocess
 import os
 import tempfile
+from typing import Dict, Any
 
 class ModernCoverLetterTemplate:
     """
@@ -9,7 +10,7 @@ class ModernCoverLetterTemplate:
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: Dict[str, Any]) -> None:
         """
         Initialize the ModernCoverLetterTemplate class.
 
@@ -17,7 +18,7 @@ class ModernCoverLetterTemplate:
             data (dict): The JSON data containing cover letter information.
         """
         self.data = self.replace_special_chars(data)
-        self.output_path = None
+        self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
         self.template_path = os.path.join(self.template_dir, "modern.tex")
         
@@ -130,7 +131,7 @@ class ModernCoverLetterTemplate:
         
         return cover_letter
 
-    def export_to_pdf(self, output_path: str = "cover_letter.pdf", clean_up: bool = True) -> str:
+    def export_to_pdf(self, output_path: str = "output.pdf") -> str:
         """Compile LaTeX content to PDF using pdflatex"""
         self.output_path = output_path
         content = self.generate_cover_letter()
@@ -161,17 +162,5 @@ class ModernCoverLetterTemplate:
                 os.replace(pdf_path, output_path)
             else:
                 raise FileNotFoundError("PDF output not generated")
-            
-            if not clean_up:
-                # Save intermediate files in the output directory if requested
-                base_name = os.path.splitext(output_path)[0]
-                for ext in ['.tex', '.aux', '.log']:
-                    src = os.path.join(tmpdir, f"temp{ext}")
-                    if os.path.exists(src):
-                        dest = f"{base_name}{ext}"
-                        try:
-                            os.replace(src, dest)
-                        except:
-                            pass
         
         return output_path 
