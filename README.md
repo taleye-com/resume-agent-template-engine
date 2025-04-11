@@ -38,10 +38,10 @@ resume-agent-template-engine/
 │       │           ├── preview.png
 │       │           └── README.md
 │       ├── api/
-│       │   ├── app.py
 │       │   └── routes.py
-│       └── examples/
-│           └── example_usage.py
+│       ├── examples/
+│       │   └── example_usage.py
+│       └── app.py
 ├── tests/
 ├── docs/
 ├── .github/
@@ -186,10 +186,9 @@ The template engine expects data in the following format:
 
 The project uses GitHub Actions for continuous integration and deployment. The workflow includes:
 
-- Running tests across Python 3.9, 3.10, and 3.11
+- Running tests across Python 3.10
 - Code coverage reporting
 - Linting with black and mypy
-- Package building
 
 To contribute, please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 

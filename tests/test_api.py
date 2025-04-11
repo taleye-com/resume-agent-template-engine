@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from api import app
+from resume_agent_template_engine.app import app
 import json
 import os
 import shutil
@@ -248,4 +248,9 @@ def test_input_validation_invalid_date():
     }
     response = client.post("/generate", json=request_data)
     assert response.status_code == 400  # Bad Request for validation errors
-    assert "date" in response.json()["detail"].lower() 
+    assert "date" in response.json()["detail"].lower()
+
+def test_read_main():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to Resume Agent Template Engine"} 
