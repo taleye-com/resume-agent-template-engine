@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from resume_agent_template_engine.app import app
+from resume_agent_template_engine.api.app import app
 import json
 import os
 import shutil
