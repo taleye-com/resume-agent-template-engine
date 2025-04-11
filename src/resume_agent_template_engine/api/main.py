@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.background import BackgroundTask
 from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional, List
 import os

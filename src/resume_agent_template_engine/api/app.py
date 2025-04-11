@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.background import BackgroundTask
 from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional, List
 import os
@@ -13,7 +14,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 import re
 from datetime import datetime
-from fastapi import BackgroundTask
 
 app = FastAPI(
     title="Resume and Cover Letter Template Engine API",
