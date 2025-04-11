@@ -202,7 +202,7 @@ class ClassicResumeTemplate:
             
         return resume
 
-    def export_to_pdf(self, output_path: str = "output.pdf"):
+    def export_to_pdf(self, output_path: str = "output.pdf") -> str:
         """Compile LaTeX content to PDF using pdflatex"""
         self.output_path = output_path
         content = self.generate_resume()
@@ -233,3 +233,5 @@ class ClassicResumeTemplate:
                 os.replace(pdf_path, output_path)
             else:
                 raise FileNotFoundError("PDF output not generated")
+            
+        return output_path

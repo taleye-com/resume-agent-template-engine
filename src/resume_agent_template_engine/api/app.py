@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 import re
 from datetime import datetime
+from fastapi import BackgroundTask
 
 app = FastAPI(
     title="Resume and Cover Letter Template Engine API",
@@ -132,7 +133,7 @@ async def generate_document(request: DocumentRequest):
                 output_path,
                 media_type='application/pdf',
                 filename=filename,
-                background=cleanup_file if request.clean_up else None
+                background=BackgroundTask(cleanup_file) if request.clean_up else None
             )
         except Exception as e:
             # Clean up the temporary file if generation fails

@@ -54,12 +54,12 @@ class TemplateEditing:
         else:
             raise ValueError(f"Unsupported template category: {self.template_category}")
 
-    def export_to_pdf(self, output_path: str = None):
+    def export_to_pdf(self, output_path: str | None = None) -> str:
         """
         Compile LaTeX content to PDF using the template.
         
         Args:
-            output_path (str, optional): Path to save the PDF. If None, uses a default path.
+            output_path (str | None, optional): Path to save the PDF. If None, uses a default path.
         
         Returns:
             str: The path to the generated PDF

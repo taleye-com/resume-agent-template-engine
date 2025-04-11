@@ -130,7 +130,7 @@ class ModernCoverLetterTemplate:
         
         return cover_letter
 
-    def export_to_pdf(self, output_path: str = "cover_letter.pdf", clean_up: bool = True):
+    def export_to_pdf(self, output_path: str = "cover_letter.pdf", clean_up: bool = True) -> str:
         """Compile LaTeX content to PDF using pdflatex"""
         self.output_path = output_path
         content = self.generate_cover_letter()
@@ -172,4 +172,6 @@ class ModernCoverLetterTemplate:
                         try:
                             os.replace(src, dest)
                         except:
-                            pass 
+                            pass
+        
+        return output_path 
