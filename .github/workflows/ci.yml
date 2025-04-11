@@ -43,4 +43,5 @@ jobs:
     
     - name: Run type checking
       run: |
-        mypy --namespace-packages src/ 
+        cd src
+        PYTHONPATH=$PYTHONPATH:$(pwd) mypy --namespace-packages resume_agent_template_engine/ 
