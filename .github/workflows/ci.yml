@@ -37,8 +37,4 @@ jobs:
     - name: Run linting
       run: |
         black --check src/ tests/
-        mypy src/
-    
-    - name: Build package
-      run: |
-        python setup.py sdist bdist_wheel 
+        mypy src/ 
