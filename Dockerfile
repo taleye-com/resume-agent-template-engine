@@ -10,14 +10,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
-    texlive-base \
-    texlive-latex-base \
-    texlive-fonts-recommended \
-    texlive-latex-recommended \
-    texlive-latex-extra \
-    texlive-xetex \
+    texlive-full \
+    fontconfig \
+    fonts-liberation \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify pdflatex installation
+RUN pdflatex --version
 
 # Copy requirements files
 COPY requirements.txt .
