@@ -115,6 +115,28 @@ This script will:
 
 ## Usage
 
+### Option 1: Streamlit UI (Recommended for Users)
+
+Launch the user-friendly web interface:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch the UI
+python run_ui.py
+```
+
+Navigate to `http://localhost:8502` for an intuitive form-based interface to:
+- Fill in your information using dynamic forms
+- Select from available templates
+- Generate and download professional PDFs
+- Preview templates and understand data schemas
+
+See [UI_README.md](UI_README.md) for detailed UI documentation.
+
+### Option 2: API (For Developers and Integration)
+
 1. Start the server:
    ```bash
    python run.py

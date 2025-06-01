@@ -262,13 +262,25 @@ class TemplateEngine:
         if templates_path:
             self.templates_path = templates_path
         else:
-            self.templates_path = self.config.config.get("templates", {}).get(
-                "base_path", "templates"
+            # Default to templates directory relative to this module
+            module_dir = Path(__file__).parent.parent  # Go up to resume_agent_template_engine
+            default_templates_path = module_dir / "templates"
+            
+            config_templates_path = self.config.config.get("templates", {}).get(
+                "base_path", str(default_templates_path)
             )
+            
+            # If config path is relative, make it relative to module dir
+            if not os.path.isabs(config_templates_path):
+                self.templates_path = str(module_dir / config_templates_path)
+            else:
+                self.templates_path = config_templates_path
 
         self.registry = TemplateRegistry(self.templates_path)
+        available_templates = self.get_available_templates()
+        total_templates = sum(len(templates) for templates in available_templates.values()) if isinstance(available_templates, dict) else len(available_templates)
         logger.info(
-            f"TemplateEngine initialized with {len(self.get_available_templates())} template types"
+            f"TemplateEngine initialized with {total_templates} templates from {self.templates_path}"
         )
 
     def get_available_templates(
