@@ -12,7 +12,7 @@ This guide explains how to deploy the Resume Template Engine using Docker and Do
 1. **Clone the repository**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/taleye-com/resume-agent-template-engine
    cd resume-agent-template-engine
    ```
 

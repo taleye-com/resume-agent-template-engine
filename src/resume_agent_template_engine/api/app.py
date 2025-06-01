@@ -214,7 +214,7 @@ async def generate_document_from_yaml(
     try:
         # Parse YAML data
         data = parse_yaml_data(request.yaml_data)
-        
+
         # Validate data format
         validate_resume_data(data)
 
@@ -254,9 +254,7 @@ async def generate_document_from_yaml(
 
             # Determine filename based on document type
             person_name = (
-                data.get("personalInfo", {})
-                .get("name", "output")
-                .replace(" ", "_")
+                data.get("personalInfo", {}).get("name", "output").replace(" ", "_")
             )
             filename = f"{request.document_type}_{person_name}.pdf"
 
@@ -356,7 +354,7 @@ async def get_document_schema(document_type: DocumentType):
                 "json_example": {
                     "personalInfo": {"name": "John Doe", "email": "john@example.com"}
                 },
-                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com"
+                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com",
             }
         else:
             return {
@@ -379,7 +377,7 @@ async def get_document_schema(document_type: DocumentType):
                     "personalInfo": {"name": "John Doe", "email": "john@example.com"},
                     "content": "Dear Hiring Manager,...",
                 },
-                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com\ncontent: Dear Hiring Manager,..."
+                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com\ncontent: Dear Hiring Manager,...",
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -399,35 +397,35 @@ async def get_document_schema_yaml(document_type: DocumentType):
                     "website": "https://johndoe.dev",
                     "linkedin": "https://linkedin.com/in/johndoe",
                     "website_display": "https://johndoe.dev",
-                    "linkedin_display": "https://linkedin.com/in/johndoe"
+                    "linkedin_display": "https://linkedin.com/in/johndoe",
                 },
                 "professionalSummary": "Experienced software engineer with 5+ years of expertise in full-stack development.",
                 "experience": [
                     {
                         "position": "Senior Software Engineer",
-                        "company": "Tech Corp", 
+                        "company": "Tech Corp",
                         "startDate": "2020-01",
                         "endDate": "Present",
                         "location": "New York, NY",
                         "description": "Lead development of cloud-native applications",
                         "achievements": [
                             "Reduced system latency by 40%",
-                            "Led team of 5 engineers"
-                        ]
+                            "Led team of 5 engineers",
+                        ],
                     }
                 ],
                 "education": [
                     {
                         "degree": "Bachelor of Science in Computer Science",
-                        "institution": "University of Technology", 
+                        "institution": "University of Technology",
                         "graduationDate": "2019-05",
-                        "gpa": "3.8/4.0"
+                        "gpa": "3.8/4.0",
                     }
                 ],
                 "skills": {
                     "technical": ["Python", "JavaScript", "React", "AWS"],
-                    "soft": ["Leadership", "Communication"]
-                }
+                    "soft": ["Leadership", "Communication"],
+                },
             }
         else:
             example_data = {
@@ -435,26 +433,26 @@ async def get_document_schema_yaml(document_type: DocumentType):
                     "name": "John Doe",
                     "email": "john@example.com",
                     "phone": "+1 (555) 123-4567",
-                    "location": "New York, NY"
+                    "location": "New York, NY",
                 },
                 "recipient": {
                     "name": "Jane Smith",
                     "title": "Hiring Manager",
-                    "company": "Innovative Tech Solutions"
+                    "company": "Innovative Tech Solutions",
                 },
                 "date": "March 15, 2024",
                 "salutation": "Dear Ms. Smith,",
                 "body": [
                     "I am writing to express my strong interest in the position.",
-                    "My experience aligns perfectly with your requirements."
+                    "My experience aligns perfectly with your requirements.",
                 ],
-                "closing": "Sincerely,\nJohn Doe"
+                "closing": "Sincerely,\nJohn Doe",
             }
-        
+
         yaml_content = yaml.dump(example_data, default_flow_style=False, indent=2)
         return {
             "yaml_example": yaml_content,
-            "description": f"Example YAML format for {document_type} generation"
+            "description": f"Example YAML format for {document_type} generation",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

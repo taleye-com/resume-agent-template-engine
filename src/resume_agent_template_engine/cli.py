@@ -35,7 +35,7 @@ def load_data_file(file_path: str) -> Dict[str, Any]:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             # Determine file format based on extension
-            if file_path.lower().endswith(('.yaml', '.yml')):
+            if file_path.lower().endswith((".yaml", ".yml")):
                 return yaml.safe_load(f)
             else:
                 # Default to JSON for backwards compatibility
@@ -44,7 +44,9 @@ def load_data_file(file_path: str) -> Dict[str, Any]:
         print(f"Error: Data file not found: {file_path}")
         sys.exit(1)
     except (json.JSONDecodeError, yaml.YAMLError) as e:
-        file_format = "YAML" if file_path.lower().endswith(('.yaml', '.yml')) else "JSON"
+        file_format = (
+            "YAML" if file_path.lower().endswith((".yaml", ".yml")) else "JSON"
+        )
         print(f"Error: Invalid {file_format} in {file_path}: {e}")
         sys.exit(1)
 
@@ -73,8 +75,16 @@ def create_sample_data(document_type: str, output_path: str):
                     "startDate": "2015-09",
                     "endDate": "2019-05",
                     "focus": "Software Engineering and Algorithms",
-                    "notableCourseWorks": ["Data Structures", "Algorithms", "Software Engineering", "Database Systems"],
-                    "projects": ["Distributed Chat Application", "E-commerce Web Platform"]
+                    "notableCourseWorks": [
+                        "Data Structures",
+                        "Algorithms",
+                        "Software Engineering",
+                        "Database Systems",
+                    ],
+                    "projects": [
+                        "Distributed Chat Application",
+                        "E-commerce Web Platform",
+                    ],
                 }
             ],
             "experience": [
@@ -86,58 +96,58 @@ def create_sample_data(document_type: str, output_path: str):
                     "achievements": [
                         "Reduced system latency by 40% through optimization",
                         "Led team of 5 engineers in agile development practices",
-                        "Implemented microservices architecture serving 1M+ users"
+                        "Implemented microservices architecture serving 1M+ users",
                     ],
                 }
             ],
             "projects": [
                 {
                     "name": "Cloud Native Application Platform",
-                    "description": ["Scalable microservices platform", "Real-time data processing"],
+                    "description": [
+                        "Scalable microservices platform",
+                        "Real-time data processing",
+                    ],
                     "tools": ["Python", "Docker", "Kubernetes", "AWS"],
                     "achievements": [
                         "Processed 1TB+ daily data with 99.9% uptime",
-                        "Reduced deployment time by 70%"
-                    ]
+                        "Reduced deployment time by 70%",
+                    ],
                 }
             ],
             "articlesAndPublications": [
                 {
                     "title": "Microservices Architecture Best Practices",
-                    "date": "2023-03"
+                    "date": "2023-03",
                 },
-                {
-                    "title": "Scaling Applications with Kubernetes",
-                    "date": "2022-11"
-                }
+                {"title": "Scaling Applications with Kubernetes", "date": "2022-11"},
             ],
             "achievements": [
                 "AWS Certified Solutions Architect",
                 "Led migration of legacy system to cloud-native architecture",
-                "Mentored 10+ junior developers"
+                "Mentored 10+ junior developers",
             ],
             "certifications": [
                 "AWS Certified Solutions Architect - Professional (2023)",
                 "Certified Kubernetes Application Developer (2022)",
-                "Google Cloud Professional Cloud Architect (2021)"
+                "Google Cloud Professional Cloud Architect (2021)",
             ],
             "technologiesAndSkills": [
                 {
                     "category": "Programming Languages",
-                    "skills": ["Python", "JavaScript", "TypeScript", "Go", "Java"]
+                    "skills": ["Python", "JavaScript", "TypeScript", "Go", "Java"],
                 },
                 {
                     "category": "Frameworks & Libraries",
-                    "skills": ["React", "Node.js", "Django", "Flask", "Express.js"]
+                    "skills": ["React", "Node.js", "Django", "Flask", "Express.js"],
                 },
                 {
                     "category": "Cloud & DevOps",
-                    "skills": ["AWS", "Docker", "Kubernetes", "Terraform", "Jenkins"]
+                    "skills": ["AWS", "Docker", "Kubernetes", "Terraform", "Jenkins"],
                 },
                 {
                     "category": "Databases",
-                    "skills": ["PostgreSQL", "MongoDB", "Redis", "DynamoDB"]
-                }
+                    "skills": ["PostgreSQL", "MongoDB", "Redis", "DynamoDB"],
+                },
             ],
         }
 
@@ -169,7 +179,7 @@ def create_sample_data(document_type: str, output_path: str):
 
     try:
         # Determine output format based on extension
-        if output_path.lower().endswith(('.yaml', '.yml')):
+        if output_path.lower().endswith((".yaml", ".yml")):
             with open(output_path, "w", encoding="utf-8") as f:
                 yaml.dump(sample_data, f, default_flow_style=False, indent=2)
             print(f"Sample {document_type} YAML data created: {output_path}")
@@ -293,43 +303,36 @@ Examples:
         """,
     )
 
-    parser.add_argument(
-        "--config", "-c", help="Path to YAML configuration file")
-    parser.add_argument("--templates-path", "-t",
-                        help="Path to templates directory")
+    parser.add_argument("--config", "-c", help="Path to YAML configuration file")
+    parser.add_argument("--templates-path", "-t", help="Path to templates directory")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"
     )
 
-    subparsers = parser.add_subparsers(
-        dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # List command
-    list_parser = subparsers.add_parser(
-        "list", help="List available templates")
+    list_parser = subparsers.add_parser("list", help="List available templates")
     list_parser.add_argument(
         "--type", choices=["resume", "cover_letter"], help="Filter by document type"
     )
 
     # Info command
-    info_parser = subparsers.add_parser(
-        "info", help="Show template information")
+    info_parser = subparsers.add_parser("info", help="Show template information")
     info_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
     info_parser.add_argument("template_name", help="Template name")
 
     # Sample command
-    sample_parser = subparsers.add_parser(
-        "sample", help="Create sample data file")
+    sample_parser = subparsers.add_parser("sample", help="Create sample data file")
     sample_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
     sample_parser.add_argument("output_path", help="Output file path")
 
     # Generate command
-    generate_parser = subparsers.add_parser(
-        "generate", help="Generate document")
+    generate_parser = subparsers.add_parser("generate", help="Generate document")
     generate_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
