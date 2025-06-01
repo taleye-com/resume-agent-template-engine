@@ -4,8 +4,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional, List
 import os
 import json
-from resume_agent_template_engine.core.resume_template_editing import TemplateEditing
-from resume_agent_template_engine.templates.template_manager import TemplateManager
+from resume_agent_template_engine.core.template_engine import TemplateEngine, DocumentType, OutputFormat
 import tempfile
 import uvicorn
 from enum import Enum
@@ -33,9 +32,7 @@ app.add_middleware(
 async def root():
     return {"message": "Welcome to Resume Agent Template Engine"}
 
-class DocumentType(str, Enum):
-    RESUME = "resume"
-    COVER_LETTER = "cover_letter"
+# DocumentType enum is now imported from template_engine
 
 class PersonalInfo(BaseModel):
     name: str
@@ -96,9 +93,9 @@ async def generate_document(request: DocumentRequest, background_tasks: Backgrou
         # Validate data format
         validate_resume_data(request.data)
         
-        # Initialize template manager to validate templates
-        template_manager = TemplateManager()
-        available_templates = template_manager.get_available_templates()
+        # Initialize template engine
+        engine = TemplateEngine()
+        available_templates = engine.get_available_templates()
         
         # Validate document type
         if request.document_type not in available_templates:
@@ -123,9 +120,8 @@ async def generate_document(request: DocumentRequest, background_tasks: Backgrou
             output_path = tmp_file.name
             
         try:
-            # Generate the document
-            template = template_manager.create_template(request.document_type, request.template, request.data)
-            template.export_to_pdf(output_path)
+            # Generate the document using the new template engine
+            engine.export_to_pdf(request.document_type, request.template, request.data, output_path)
             
             # Determine filename based on document type
             person_name = request.data.get('personalInfo', {}).get('name', 'output').replace(' ', '_')
@@ -158,8 +154,8 @@ async def generate_document(request: DocumentRequest, background_tasks: Backgrou
 async def list_templates():
     """List all available templates by document type."""
     try:
-        template_manager = TemplateManager()
-        available_templates = template_manager.get_available_templates()
+        engine = TemplateEngine()
+        available_templates = engine.get_available_templates()
         return {"templates": available_templates}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -168,8 +164,8 @@ async def list_templates():
 async def list_templates_by_type(document_type: DocumentType):
     """List all available templates for a specific document type."""
     try:
-        template_manager = TemplateManager()
-        available_templates = template_manager.get_available_templates(document_type)
+        engine = TemplateEngine()
+        available_templates = engine.get_available_templates(document_type)
         return {"templates": available_templates}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -180,33 +176,17 @@ async def list_templates_by_type(document_type: DocumentType):
 async def get_template_info(document_type: DocumentType, template_name: str):
     """Get detailed information about a specific template."""
     try:
-        template_manager = TemplateManager()
-        available_templates = template_manager.get_available_templates()
+        engine = TemplateEngine()
+        template_info = engine.get_template_info(document_type, template_name)
         
-        if document_type not in available_templates:
-            raise HTTPException(status_code=404, detail=f"Document type '{document_type}' not found")
+        # Convert preview path to URL if it exists
+        if template_info.get('preview_path'):
+            preview_filename = os.path.basename(template_info['preview_path'])
+            template_info['preview_url'] = f"/templates/{document_type}/{template_name}/{preview_filename}"
         
-        if template_name not in available_templates[document_type]:
-            raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
-        
-        template_dir = os.path.join("templates", document_type, template_name)
-        
-        # Check for preview image
-        preview_url = None
-        for ext in ['.png', '.jpg', '.jpeg']:
-            preview_path = os.path.join(template_dir, f"preview{ext}")
-            if os.path.exists(preview_path):
-                preview_url = f"/templates/{document_type}/{template_name}/preview{ext}"
-                break
-        
-        return {
-            "name": template_name,
-            "document_type": document_type,
-            "preview_url": preview_url,
-            "description": f"{template_name.capitalize()} template for {document_type.replace('_', ' ')}",
-        }
-    except HTTPException as e:
-        raise e
+        return template_info
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

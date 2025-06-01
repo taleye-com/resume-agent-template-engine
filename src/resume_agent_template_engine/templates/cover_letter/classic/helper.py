@@ -2,21 +2,26 @@ import re
 import subprocess
 import os
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, List
+from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
 
-class ModernCoverLetterTemplate:
+class ModernCoverLetterTemplate(TemplateInterface):
     """
     Helper class for generating a Modern LaTeX cover letter from JSON data.
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(self, data: Dict[str, Any], config: Dict[str, Any] = None) -> None:
         """
         Initialize the ModernCoverLetterTemplate class.
 
         Args:
             data (dict): The JSON data containing cover letter information.
+            config (dict): Template-specific configuration.
         """
+        # Initialize parent class
+        super().__init__(data, config)
+        
         self.data = self.replace_special_chars(data)
         self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,8 +32,6 @@ class ModernCoverLetterTemplate:
                 self.template = f.read()
         except Exception as e:
             raise IOError(f"Error reading template file {self.template_path}: {e}") from e
-
-        self.validate_data()
 
     def validate_data(self):
         """Ensure all required sections are present in the JSON data."""
@@ -130,6 +133,27 @@ class ModernCoverLetterTemplate:
             raise ValueError("Unreplaced placeholders detected")
         
         return cover_letter
+
+    def render(self) -> str:
+        """Render the template to LaTeX content"""
+        return self.generate_cover_letter()
+
+    @property
+    def required_fields(self) -> List[str]:
+        """List of required data fields for this template"""
+        return [
+            "personalInfo",
+            "recipient", 
+            "date",
+            "salutation",
+            "body",
+            "closing"
+        ]
+    
+    @property
+    def template_type(self) -> DocumentType:
+        """The document type this template handles"""
+        return DocumentType.COVER_LETTER
 
     def export_to_pdf(self, output_path: str = "output.pdf") -> str:
         """Compile LaTeX content to PDF using pdflatex"""

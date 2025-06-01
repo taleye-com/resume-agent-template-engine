@@ -2,21 +2,26 @@ import re
 import subprocess
 import os
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, List
+from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
 
-class ClassicResumeTemplate:
+class ClassicResumeTemplate(TemplateInterface):
     """
     Helper class for generating a Classic LaTeX resume from JSON data.
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(self, data: Dict[str, Any], config: Dict[str, Any] = None) -> None:
         """
         Initialize the ClassicResumeTemplate class.
 
         Args:
             data (dict): The JSON data containing resume information.
+            config (dict): Template-specific configuration.
         """
+        # Initialize parent class
+        super().__init__(data, config)
+        
         self.data = self.replace_special_chars(data)
         self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,8 +32,6 @@ class ClassicResumeTemplate:
                 self.template = f.read()
         except Exception as e:
             raise IOError(f"Error reading template file {self.template_path}: {e}") from e
-
-        self.validate_data()
 
     def validate_data(self):
         """Ensure all required sections are present in the JSON data."""
@@ -202,6 +205,30 @@ class ClassicResumeTemplate:
             raise ValueError("Unreplaced placeholders detected")
             
         return resume
+
+    def render(self) -> str:
+        """Render the template to LaTeX content"""
+        return self.generate_resume()
+
+    @property
+    def required_fields(self) -> List[str]:
+        """List of required data fields for this template"""
+        return [
+            "personalInfo",
+            "professionalSummary", 
+            "education",
+            "experience", 
+            "projects", 
+            "articlesAndPublications", 
+            "achievements",
+            "certifications", 
+            "technologiesAndSkills"
+        ]
+    
+    @property
+    def template_type(self) -> DocumentType:
+        """The document type this template handles"""
+        return DocumentType.RESUME
 
     def export_to_pdf(self, output_path: str = "output.pdf") -> str:
         """Compile LaTeX content to PDF using pdflatex"""
