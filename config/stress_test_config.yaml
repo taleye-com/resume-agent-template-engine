@@ -1,0 +1,247 @@
+# Stress Testing Configuration
+# This file defines different stress levels and performance requirements for the resume-agent-template-engine
+
+# Global Configuration
+global_settings:
+  default_stress_level: "medium"
+  timeout_seconds: 300  # 5 minutes max test duration
+  cleanup_temp_files: true
+  enable_detailed_logging: true
+  retry_failed_assertions: false
+
+# Stress Level Definitions
+stress_levels:
+  # Light stress testing for development environment
+  light:
+    description: "Light stress testing suitable for development environment"
+    concurrent_requests:
+      high_volume_test: 10
+      sustained_load_test: 5
+      race_condition_test: 5
+      resource_contention_test: 10
+      scaling_test_levels: [2, 4, 6, 8, 10]
+      overload_test: 15
+    
+    performance_requirements:
+      success_rate_threshold: 0.90  # 90%
+      avg_response_time_threshold: 3.0  # seconds
+      max_response_time_threshold: 10.0  # seconds
+      throughput_threshold: 5.0  # requests/second
+      memory_increase_threshold: 100  # MB
+      recovery_degradation_threshold: 5.0  # 5x baseline
+    
+    test_duration:
+      sustained_load_duration: 10  # seconds
+      overload_duration: 5  # seconds
+      recovery_wait_time: 1  # seconds
+    
+    payload_size:
+      large_payload_entries: 20
+      large_payload_size_mb: 1.0
+
+  # Medium stress testing for staging environment
+  medium:
+    description: "Medium stress testing suitable for staging environment"
+    concurrent_requests:
+      high_volume_test: 50
+      sustained_load_test: 20
+      race_condition_test: 20
+      resource_contention_test: 50
+      scaling_test_levels: [5, 10, 15, 20, 25]
+      overload_test: 75
+    
+    performance_requirements:
+      success_rate_threshold: 0.95  # 95%
+      avg_response_time_threshold: 2.0  # seconds
+      max_response_time_threshold: 5.0  # seconds
+      throughput_threshold: 10.0  # requests/second
+      memory_increase_threshold: 75  # MB
+      recovery_degradation_threshold: 10.0  # 10x baseline
+    
+    test_duration:
+      sustained_load_duration: 30  # seconds
+      overload_duration: 10  # seconds
+      recovery_wait_time: 2  # seconds
+    
+    payload_size:
+      large_payload_entries: 100
+      large_payload_size_mb: 5.0
+
+  # Heavy stress testing for production validation
+  heavy:
+    description: "Heavy stress testing for production validation"
+    concurrent_requests:
+      high_volume_test: 200
+      sustained_load_test: 50
+      race_condition_test: 50
+      resource_contention_test: 100
+      scaling_test_levels: [10, 25, 50, 75, 100]
+      overload_test: 300
+    
+    performance_requirements:
+      success_rate_threshold: 0.98  # 98%
+      avg_response_time_threshold: 1.5  # seconds
+      max_response_time_threshold: 3.0  # seconds
+      throughput_threshold: 25.0  # requests/second
+      memory_increase_threshold: 50  # MB
+      recovery_degradation_threshold: 3.0  # 3x baseline
+    
+    test_duration:
+      sustained_load_duration: 60  # seconds
+      overload_duration: 15  # seconds
+      recovery_wait_time: 3  # seconds
+    
+    payload_size:
+      large_payload_entries: 200
+      large_payload_size_mb: 10.0
+
+  # Enterprise stress testing for high-scale production
+  enterprise:
+    description: "Enterprise-level stress testing for high-scale production systems"
+    concurrent_requests:
+      high_volume_test: 1000
+      sustained_load_test: 200
+      race_condition_test: 100
+      resource_contention_test: 500
+      scaling_test_levels: [50, 100, 250, 500, 1000]
+      overload_test: 1500
+    
+    performance_requirements:
+      success_rate_threshold: 0.99  # 99%
+      avg_response_time_threshold: 1.0  # seconds
+      max_response_time_threshold: 2.0  # seconds
+      throughput_threshold: 100.0  # requests/second
+      memory_increase_threshold: 25  # MB
+      recovery_degradation_threshold: 2.0  # 2x baseline
+    
+    test_duration:
+      sustained_load_duration: 120  # seconds
+      overload_duration: 30  # seconds
+      recovery_wait_time: 5  # seconds
+    
+    payload_size:
+      large_payload_entries: 500
+      large_payload_size_mb: 25.0
+
+  # Extreme stress testing for maximum system validation
+  extreme:
+    description: "Extreme stress testing to find system breaking points"
+    concurrent_requests:
+      high_volume_test: 10000
+      sustained_load_test: 1000
+      race_condition_test: 500
+      resource_contention_test: 2000
+      scaling_test_levels: [100, 500, 1000, 5000, 10000]
+      overload_test: 15000
+    
+    performance_requirements:
+      success_rate_threshold: 0.95  # 95% (may degrade under extreme load)
+      avg_response_time_threshold: 2.0  # seconds
+      max_response_time_threshold: 10.0  # seconds
+      throughput_threshold: 500.0  # requests/second
+      memory_increase_threshold: 100  # MB (may increase under extreme load)
+      recovery_degradation_threshold: 5.0  # 5x baseline
+    
+    test_duration:
+      sustained_load_duration: 300  # 5 minutes
+      overload_duration: 60  # seconds
+      recovery_wait_time: 10  # seconds
+    
+    payload_size:
+      large_payload_entries: 1000
+      large_payload_size_mb: 50.0
+
+# Test Categories Configuration
+test_categories:
+  development:
+    stress_levels: ["light"]
+    required_tests: ["high_volume", "memory_stress", "race_condition"]
+    optional_tests: ["large_payload", "sustained_load"]
+    skip_slow_tests: true
+  
+  staging:
+    stress_levels: ["light", "medium"]
+    required_tests: ["high_volume", "memory_stress", "large_payload", "sustained_load", "race_condition", "resource_contention"]
+    optional_tests: ["scaling_behavior", "recovery_after_overload"]
+    skip_slow_tests: false
+  
+  production:
+    stress_levels: ["medium", "heavy"]
+    required_tests: ["high_volume", "memory_stress", "large_payload", "sustained_load", "race_condition", "resource_contention", "scaling_behavior"]
+    optional_tests: ["recovery_after_overload"]
+    skip_slow_tests: false
+  
+  enterprise:
+    stress_levels: ["heavy", "enterprise"]
+    required_tests: ["high_volume", "memory_stress", "large_payload", "sustained_load", "race_condition", "resource_contention", "scaling_behavior", "recovery_after_overload"]
+    optional_tests: []
+    skip_slow_tests: false
+  
+  breaking_point:
+    stress_levels: ["extreme"]
+    required_tests: ["high_volume", "sustained_load", "scaling_behavior"]
+    optional_tests: ["memory_stress", "large_payload", "race_condition", "resource_contention", "recovery_after_overload"]
+    skip_slow_tests: false
+
+# Benchmark Requirements
+benchmarks:
+  api_response_times:
+    health_check_max: 0.01  # seconds
+    list_templates_max: 0.05  # seconds
+    get_schema_max: 0.05  # seconds
+    document_generation_avg_max: 1.0  # seconds
+    document_generation_p95_max: 2.0  # seconds
+    document_generation_p99_max: 5.0  # seconds
+  
+  throughput_requirements:
+    single_request_min: 5.0  # requests/second
+    concurrent_10_min: 15.0  # requests/second
+    concurrent_20_min: 25.0  # requests/second
+    concurrent_50_min: 50.0  # requests/second
+    concurrent_100_min: 75.0  # requests/second
+
+# Resource Monitoring
+resource_monitoring:
+  enable_memory_tracking: true
+  enable_cpu_tracking: false  # Requires psutil
+  enable_disk_io_tracking: false  # Requires psutil
+  memory_check_interval: 10  # number of requests
+  gc_force_interval: 50  # number of requests
+
+# Environment-specific Overrides
+environment_overrides:
+  ci_cd:
+    # Reduce load for CI/CD environments
+    concurrent_requests_multiplier: 0.5
+    duration_multiplier: 0.5
+    timeout_seconds: 180
+  
+  local_development:
+    # Minimal load for local development
+    concurrent_requests_multiplier: 0.2
+    duration_multiplier: 0.3
+    timeout_seconds: 60
+  
+  performance_testing:
+    # Maximum load for dedicated performance testing
+    concurrent_requests_multiplier: 2.0
+    duration_multiplier: 2.0
+    timeout_seconds: 600
+
+# Failure Handling
+failure_handling:
+  retry_on_failure: false
+  max_retries: 3
+  retry_delay: 5  # seconds
+  continue_on_assertion_failure: false
+  generate_performance_report: true
+  save_failure_logs: true
+
+# Reporting Configuration
+reporting:
+  generate_detailed_report: true
+  include_performance_graphs: false  # Would require matplotlib
+  export_metrics_to_file: true
+  metrics_file_format: "json"  # json, csv, yaml
+  include_system_info: true
+  compare_with_baseline: false 

@@ -1,3 +1,3 @@
 """
 Resume templates package.
-""" 
+"""

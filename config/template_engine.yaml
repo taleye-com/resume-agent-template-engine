@@ -1,0 +1,95 @@
+# Template Engine Configuration
+
+templates:
+  base_path: "src/resume_agent_template_engine/templates"
+  auto_discover: true
+  supported_formats:
+    - "pdf"
+    - "latex"
+  
+  # Template-specific configurations
+  resume:
+    classic:
+      font_size: "11pt"
+      page_margins: "0.75in"
+      line_spacing: 1.15
+      color_scheme: "professional"
+      sections:
+        - "personalInfo"
+        - "summary"
+        - "experience"
+        - "education"
+        - "skills"
+        - "certifications"
+      
+  cover_letter:
+    classic:
+      font_size: "11pt"
+      page_margins: "1in"
+      line_spacing: 1.2
+      letter_spacing: "normal"
+      date_format: "%B %d, %Y"
+
+rendering:
+  latex_engine: "pdflatex"
+  temp_dir: null  # Use system temp dir
+  cleanup: true
+  compile_twice: true  # For proper cross-references
+  interaction_mode: "nonstopmode"
+  
+validation:
+  strict_mode: false
+  required_fields:
+    resume:
+      - "personalInfo"
+    cover_letter:
+      - "personalInfo"
+      - "recipient"
+  
+  field_validation:
+    personalInfo:
+      required:
+        - "name"
+        - "email"
+      optional:
+        - "phone"
+        - "location"
+        - "website"
+        - "linkedin"
+    
+    experience:
+      required:
+        - "position"
+        - "company"
+        - "startDate"
+      optional:
+        - "endDate"
+        - "description"
+        - "achievements"
+    
+    education:
+      required:
+        - "degree"
+        - "institution"
+        - "graduationDate"
+      optional:
+        - "gpa"
+        - "honors"
+        - "coursework"
+
+# Output settings
+output:
+  default_format: "pdf"
+  naming_convention: "{document_type}_{name}_{template}"  # Variables: document_type, name, template, date
+  quality: "high"  # high, medium, low
+  
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+# Development settings
+development:
+  hot_reload: false
+  debug_latex: false
+  preserve_temp_files: false 
