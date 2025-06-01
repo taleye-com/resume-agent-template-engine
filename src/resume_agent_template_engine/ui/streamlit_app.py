@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import yaml
 import os
 import sys
 import tempfile
@@ -20,9 +21,19 @@ st.set_page_config(
     layout="wide"
 )
 
+def parse_input_data(input_text: str, input_format: str) -> Dict[str, Any]:
+    """Parse input data based on format (JSON or YAML)"""
+    try:
+        if input_format.lower() == "yaml":
+            return yaml.safe_load(input_text)
+        else:
+            return json.loads(input_text)
+    except (json.JSONDecodeError, yaml.YAMLError) as e:
+        raise ValueError(f"Invalid {input_format} format: {str(e)}")
+
 def main():
     st.title("📄 Resume Agent Template Engine")
-    st.markdown("### Simple JSON to PDF Generator")
+    st.markdown("### JSON & YAML to PDF Generator")
     
     # Initialize session state
     if 'generated_file' not in st.session_state:
@@ -58,84 +69,161 @@ def main():
             st.warning(f"No templates available for {document_type}")
             return
     
-    # JSON input section
-    st.subheader("📝 JSON Data Input")
+    # Data input section with tabs for JSON and YAML
+    st.subheader("📝 Data Input")
     
-    # Show example JSON structure
-    with st.expander("📋 View Example JSON Structure", expanded=False):
-        example_json = {
-            "personalInfo": {
-                "name": "John Doe",
-                "email": "john.doe@email.com",
-                "phone": "+1 (555) 123-4567",
-                "location": "San Francisco, CA",
-                "website": "https://johndoe.com",
-                "linkedin": "https://linkedin.com/in/johndoe"
-            },
-            "professionalSummary": "Experienced software engineer with 5+ years of experience...",
-            "experience": [
-                {
-                    "title": "Senior Software Engineer",
-                    "company": "Tech Corp",
+    tab1, tab2 = st.tabs(["JSON Input", "YAML Input"])
+    
+    with tab1:
+        st.markdown("#### JSON Format")
+        
+        # Show example JSON structure
+        with st.expander("📋 View Example JSON Structure", expanded=False):
+            example_json = {
+                "personalInfo": {
+                    "name": "John Doe",
+                    "email": "john.doe@email.com",
+                    "phone": "+1 (555) 123-4567",
                     "location": "San Francisco, CA",
-                    "startDate": "2021-03",
-                    "endDate": "Present",
-                    "details": [
-                        "Led development of microservices architecture",
-                        "Improved system performance by 40%",
-                        "Mentored junior developers"
-                    ]
-                }
-            ],
-            "education": [
-                {
-                    "degree": "Bachelor of Science in Computer Science",
-                    "institution": "University of California",
-                    "location": "Berkeley, CA",
-                    "date": "2019-05",
-                    "details": ["GPA: 3.8/4.0", "Dean's List"]
-                }
-            ],
-            "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker"],
-            "projects": [
-                {
-                    "name": "E-commerce Platform",
-                    "description": "Built a full-stack e-commerce application",
-                    "technologies": ["React", "Node.js", "MongoDB"]
-                }
-            ]
-        }
-        st.json(example_json)
+                    "website": "https://johndoe.com",
+                    "linkedin": "https://linkedin.com/in/johndoe",
+                    "website_display": "https://johndoe.dev",
+                    "linkedin_display": "https://linkedin.com/in/johndoe"
+                },
+                "professionalSummary": "Experienced software engineer with 5+ years of experience...",
+                "experience": [
+                    {
+                        "title": "Senior Software Engineer",
+                        "company": "Tech Corp",
+                        "location": "San Francisco, CA",
+                        "startDate": "2021-03",
+                        "endDate": "Present",
+                        "details": [
+                            "Led development of microservices architecture",
+                            "Improved system performance by 40%",
+                            "Mentored junior developers"
+                        ]
+                    }
+                ],
+                "education": [
+                    {
+                        "degree": "Bachelor of Science in Computer Science",
+                        "institution": "University of California",
+                        "location": "Berkeley, CA",
+                        "date": "2019-05",
+                        "details": ["GPA: 3.8/4.0", "Dean's List"]
+                    }
+                ],
+                "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker"],
+                "projects": [
+                    {
+                        "name": "E-commerce Platform",
+                        "description": "Built a full-stack e-commerce application",
+                        "technologies": ["React", "Node.js", "MongoDB"]
+                    }
+                ]
+            }
+            st.json(example_json)
+        
+        # JSON input text area
+        json_input = st.text_area(
+            "Paste your JSON data here:",
+            height=400,
+            placeholder="Paste your JSON data here...",
+            help="Enter valid JSON data following the structure shown in the example above",
+            key="json_input"
+        )
+        
+        input_format = "JSON"
+        data_input = json_input
     
-    # JSON input text area
-    json_input = st.text_area(
-        "Paste your JSON data here:",
-        height=400,
-        placeholder="Paste your JSON data here...",
-        help="Enter valid JSON data following the structure shown in the example above"
-    )
+    with tab2:
+        st.markdown("#### YAML Format")
+        
+        # Show example YAML structure
+        with st.expander("📋 View Example YAML Structure", expanded=False):
+            example_yaml = """personalInfo:
+  name: John Doe
+  email: john.doe@email.com
+  phone: "+1 (555) 123-4567"
+  location: San Francisco, CA
+  website: https://johndoe.com
+  linkedin: https://linkedin.com/in/johndoe
+  website_display: https://johndoe.dev
+  linkedin_display: https://linkedin.com/in/johndoe
+
+professionalSummary: "Experienced software engineer with 5+ years of experience..."
+
+experience:
+  - title: Senior Software Engineer
+    company: Tech Corp
+    location: San Francisco, CA
+    startDate: "2021-03"
+    endDate: Present
+    details:
+      - Led development of microservices architecture
+      - Improved system performance by 40%
+      - Mentored junior developers
+
+education:
+  - degree: Bachelor of Science in Computer Science
+    institution: University of California
+    location: Berkeley, CA
+    date: "2019-05"
+    details:
+      - "GPA: 3.8/4.0"
+      - "Dean's List"
+
+skills:
+  - Python
+  - JavaScript
+  - React
+  - Node.js
+  - AWS
+  - Docker
+
+projects:
+  - name: E-commerce Platform
+    description: Built a full-stack e-commerce application
+    technologies:
+      - React
+      - Node.js
+      - MongoDB"""
+            st.code(example_yaml, language='yaml')
+        
+        # YAML input text area
+        yaml_input = st.text_area(
+            "Paste your YAML data here:",
+            height=400,
+            placeholder="Paste your YAML data here...",
+            help="Enter valid YAML data following the structure shown in the example above",
+            key="yaml_input"
+        )
+        
+        input_format = "YAML"
+        data_input = yaml_input
     
     # Generate button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        generate_button = st.button("🎯 Generate PDF", type="primary", use_container_width=True)
+        generate_button = st.button(f"🎯 Generate PDF from {input_format}", type="primary", use_container_width=True)
     
     if generate_button:
-        if not json_input.strip():
-            st.error("Please enter JSON data before generating the document.")
+        if not data_input.strip():
+            st.error(f"Please enter {input_format} data before generating the document.")
             return
         
         try:
-            # Parse JSON
-            data = json.loads(json_input)
+            # Parse data based on format
+            data = parse_input_data(data_input, input_format)
             
             # Validate required fields
             if not data.get("personalInfo", {}).get("name"):
-                st.error("JSON must contain personalInfo.name field")
+                st.error(f"{input_format} must contain personalInfo.name field")
                 return
             
             if not data.get("personalInfo", {}).get("email"):
-                st.error("JSON must contain personalInfo.email field")
+                st.error(f"{input_format} must contain personalInfo.email field")
                 return
             
             # Generate document
@@ -159,10 +247,10 @@ def main():
                 # Clean up
                 os.unlink(output_path)
                 
-                st.success("✅ PDF generated successfully!")
+                st.success(f"✅ PDF generated successfully from {input_format} data!")
         
-        except json.JSONDecodeError as e:
-            st.error(f"Invalid JSON format: {str(e)}")
+        except ValueError as e:
+            st.error(str(e))
         except Exception as e:
             st.error(f"Error generating PDF: {str(e)}")
     

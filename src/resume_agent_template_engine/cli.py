@@ -8,6 +8,7 @@ using configurable templates.
 
 import argparse
 import json
+import yaml
 import os
 import sys
 from pathlib import Path
@@ -30,15 +31,21 @@ def setup_logging(level: str = "INFO"):
 
 
 def load_data_file(file_path: str) -> Dict[str, Any]:
-    """Load data from JSON file"""
+    """Load data from JSON or YAML file"""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            # Determine file format based on extension
+            if file_path.lower().endswith(('.yaml', '.yml')):
+                return yaml.safe_load(f)
+            else:
+                # Default to JSON for backwards compatibility
+                return json.load(f)
     except FileNotFoundError:
         print(f"Error: Data file not found: {file_path}")
         sys.exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {file_path}: {e}")
+    except (json.JSONDecodeError, yaml.YAMLError) as e:
+        file_format = "YAML" if file_path.lower().endswith(('.yaml', '.yml')) else "JSON"
+        print(f"Error: Invalid {file_format} in {file_path}: {e}")
         sys.exit(1)
 
 
@@ -58,40 +65,78 @@ def create_sample_data(document_type: str, output_path: str):
                 "website_display": "https://johndoe.dev",
                 "linkedin_display": "https://linkedin.com/in/johndoe",
             },
-            "summary": "Experienced software engineer with 5+ years of expertise in full-stack development, cloud architecture, and team leadership.",
-            "experience": [
-                {
-                    "position": "Senior Software Engineer",
-                    "company": "Tech Corp",
-                    "startDate": "2020-01",
-                    "endDate": "Present",
-                    "location": "New York, NY",
-                    "description": "Lead development of cloud-native applications serving 1M+ users",
-                    "achievements": [
-                        "Reduced system latency by 40% through optimization",
-                        "Led team of 5 engineers in agile development practices",
-                    ],
-                }
-            ],
+            "professionalSummary": "Experienced software engineer with 5+ years of expertise in full-stack development, cloud architecture, and team leadership.",
             "education": [
                 {
                     "degree": "Bachelor of Science in Computer Science",
                     "institution": "University of Technology",
-                    "graduationDate": "2019-05",
-                    "gpa": "3.8/4.0",
-                    "honors": ["Summa Cum Laude", "Dean's List"],
+                    "startDate": "2015-09",
+                    "endDate": "2019-05",
+                    "focus": "Software Engineering and Algorithms",
+                    "notableCourseWorks": ["Data Structures", "Algorithms", "Software Engineering", "Database Systems"],
+                    "projects": ["Distributed Chat Application", "E-commerce Web Platform"]
                 }
             ],
-            "skills": {
-                "technical": ["Python", "JavaScript", "React", "AWS", "Docker"],
-                "soft": ["Leadership", "Communication", "Problem Solving"],
-            },
-            "certifications": [
+            "experience": [
                 {
-                    "name": "AWS Certified Solutions Architect",
-                    "issuer": "Amazon Web Services",
-                    "date": "2021-03",
-                    "expirationDate": "2024-03",
+                    "title": "Senior Software Engineer",
+                    "company": "Tech Corp",
+                    "startDate": "2020-01",
+                    "endDate": "Present",
+                    "achievements": [
+                        "Reduced system latency by 40% through optimization",
+                        "Led team of 5 engineers in agile development practices",
+                        "Implemented microservices architecture serving 1M+ users"
+                    ],
+                }
+            ],
+            "projects": [
+                {
+                    "name": "Cloud Native Application Platform",
+                    "description": ["Scalable microservices platform", "Real-time data processing"],
+                    "tools": ["Python", "Docker", "Kubernetes", "AWS"],
+                    "achievements": [
+                        "Processed 1TB+ daily data with 99.9% uptime",
+                        "Reduced deployment time by 70%"
+                    ]
+                }
+            ],
+            "articlesAndPublications": [
+                {
+                    "title": "Microservices Architecture Best Practices",
+                    "date": "2023-03"
+                },
+                {
+                    "title": "Scaling Applications with Kubernetes",
+                    "date": "2022-11"
+                }
+            ],
+            "achievements": [
+                "AWS Certified Solutions Architect",
+                "Led migration of legacy system to cloud-native architecture",
+                "Mentored 10+ junior developers"
+            ],
+            "certifications": [
+                "AWS Certified Solutions Architect - Professional (2023)",
+                "Certified Kubernetes Application Developer (2022)",
+                "Google Cloud Professional Cloud Architect (2021)"
+            ],
+            "technologiesAndSkills": [
+                {
+                    "category": "Programming Languages",
+                    "skills": ["Python", "JavaScript", "TypeScript", "Go", "Java"]
+                },
+                {
+                    "category": "Frameworks & Libraries",
+                    "skills": ["React", "Node.js", "Django", "Flask", "Express.js"]
+                },
+                {
+                    "category": "Cloud & DevOps",
+                    "skills": ["AWS", "Docker", "Kubernetes", "Terraform", "Jenkins"]
+                },
+                {
+                    "category": "Databases",
+                    "skills": ["PostgreSQL", "MongoDB", "Redis", "DynamoDB"]
                 }
             ],
         }
@@ -123,9 +168,16 @@ def create_sample_data(document_type: str, output_path: str):
         }
 
     try:
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(sample_data, f, indent=2)
-        print(f"Sample {document_type} data created: {output_path}")
+        # Determine output format based on extension
+        if output_path.lower().endswith(('.yaml', '.yml')):
+            with open(output_path, "w", encoding="utf-8") as f:
+                yaml.dump(sample_data, f, default_flow_style=False, indent=2)
+            print(f"Sample {document_type} YAML data created: {output_path}")
+        else:
+            # Default to JSON for backwards compatibility
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(sample_data, f, indent=2)
+            print(f"Sample {document_type} JSON data created: {output_path}")
     except Exception as e:
         print(f"Error creating sample data: {e}")
         sys.exit(1)
@@ -228,52 +280,61 @@ Examples:
   # Show information about a template
   python -m resume_agent_template_engine.cli info resume classic
 
-  # Generate a sample data file
+  # Generate sample data files (JSON and YAML supported)
   python -m resume_agent_template_engine.cli sample resume resume_data.json
+  python -m resume_agent_template_engine.cli sample resume resume_data.yaml
 
-  # Generate a PDF resume
+  # Generate a PDF resume (supports both JSON and YAML input)
   python -m resume_agent_template_engine.cli generate resume classic resume_data.json resume.pdf
+  python -m resume_agent_template_engine.cli generate resume classic resume_data.yaml resume.pdf
 
   # Generate LaTeX source
-  python -m resume_agent_template_engine.cli generate cover_letter classic cover_letter_data.json cover_letter.tex --format latex
+  python -m resume_agent_template_engine.cli generate cover_letter classic cover_letter_data.yaml cover_letter.tex --format latex
         """,
     )
 
-    parser.add_argument("--config", "-c", help="Path to YAML configuration file")
-    parser.add_argument("--templates-path", "-t", help="Path to templates directory")
+    parser.add_argument(
+        "--config", "-c", help="Path to YAML configuration file")
+    parser.add_argument("--templates-path", "-t",
+                        help="Path to templates directory")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"
     )
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands")
 
     # List command
-    list_parser = subparsers.add_parser("list", help="List available templates")
+    list_parser = subparsers.add_parser(
+        "list", help="List available templates")
     list_parser.add_argument(
         "--type", choices=["resume", "cover_letter"], help="Filter by document type"
     )
 
     # Info command
-    info_parser = subparsers.add_parser("info", help="Show template information")
+    info_parser = subparsers.add_parser(
+        "info", help="Show template information")
     info_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
     info_parser.add_argument("template_name", help="Template name")
 
     # Sample command
-    sample_parser = subparsers.add_parser("sample", help="Create sample data file")
+    sample_parser = subparsers.add_parser(
+        "sample", help="Create sample data file")
     sample_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
     sample_parser.add_argument("output_path", help="Output file path")
 
     # Generate command
-    generate_parser = subparsers.add_parser("generate", help="Generate document")
+    generate_parser = subparsers.add_parser(
+        "generate", help="Generate document")
     generate_parser.add_argument(
         "document_type", choices=["resume", "cover_letter"], help="Document type"
     )
     generate_parser.add_argument("template_name", help="Template name")
-    generate_parser.add_argument("data_file", help="JSON data file")
+    generate_parser.add_argument("data_file", help="JSON or YAML data file")
     generate_parser.add_argument("output_path", help="Output file path")
     generate_parser.add_argument(
         "--format",
