@@ -77,19 +77,20 @@ def main():
 
         # Show example JSON structure
         with st.expander("📋 View Example JSON Structure", expanded=False):
+            st.info("📝 Note: Only personalInfo with name and email are required. All other sections are optional!")
             example_json = {
                 "personalInfo": {
-                    "name": "John Doe",
-                    "email": "john.doe@email.com",
-                    "phone": "+1 (555) 123-4567",
-                    "location": "San Francisco, CA",
-                    "website": "https://johndoe.com",
-                    "linkedin": "https://linkedin.com/in/johndoe",
-                    "website_display": "https://johndoe.dev",
-                    "linkedin_display": "https://linkedin.com/in/johndoe",
+                    "name": "John Doe",  # Required
+                    "email": "john.doe@email.com",  # Required
+                    "phone": "+1 (555) 123-4567",  # Optional
+                    "location": "San Francisco, CA",  # Optional
+                    "website": "https://johndoe.com",  # Optional
+                    "linkedin": "https://linkedin.com/in/johndoe",  # Optional
+                    "website_display": "https://johndoe.dev",  # Optional
+                    "linkedin_display": "https://linkedin.com/in/johndoe",  # Optional
                 },
-                "professionalSummary": "Experienced software engineer with 5+ years of experience...",
-                "experience": [
+                "professionalSummary": "Experienced software engineer with 5+ years of experience...",  # Optional
+                "experience": [  # Optional section
                     {
                         "title": "Senior Software Engineer",
                         "company": "Tech Corp",
@@ -103,7 +104,7 @@ def main():
                         ],
                     }
                 ],
-                "education": [
+                "education": [  # Optional section
                     {
                         "degree": "Bachelor of Science in Computer Science",
                         "institution": "University of California",
@@ -112,8 +113,8 @@ def main():
                         "details": ["GPA: 3.8/4.0", "Dean's List"],
                     }
                 ],
-                "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker"],
-                "projects": [
+                "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker"],  # Optional section
+                "projects": [  # Optional section
                     {
                         "name": "E-commerce Platform",
                         "description": "Built a full-stack e-commerce application",
@@ -132,24 +133,23 @@ def main():
             key="json_input",
         )
 
-        input_format = "JSON"
-        data_input = json_input
-
     with tab2:
         st.markdown("#### YAML Format")
 
         # Show example YAML structure
         with st.expander("📋 View Example YAML Structure", expanded=False):
+            st.info("📝 Note: Only personalInfo with name and email are required. All other sections are optional!")
             example_yaml = """personalInfo:
-  name: John Doe
-  email: john.doe@email.com
-  phone: "+1 (555) 123-4567"
-  location: San Francisco, CA
-  website: https://johndoe.com
-  linkedin: https://linkedin.com/in/johndoe
-  website_display: https://johndoe.dev
-  linkedin_display: https://linkedin.com/in/johndoe
+  name: John Doe  # Required
+  email: john.doe@email.com  # Required
+  phone: "+1 (555) 123-4567"  # Optional
+  location: San Francisco, CA  # Optional
+  website: https://johndoe.com  # Optional
+  linkedin: https://linkedin.com/in/johndoe  # Optional
+  website_display: https://johndoe.dev  # Optional
+  linkedin_display: https://linkedin.com/in/johndoe  # Optional
 
+# All sections below are optional
 professionalSummary: "Experienced software engineer with 5+ years of experience..."
 
 experience:
@@ -198,8 +198,23 @@ projects:
             key="yaml_input",
         )
 
+    # Determine which input has data and set format accordingly
+    json_has_data = json_input.strip()
+    yaml_has_data = yaml_input.strip()
+    
+    if json_has_data and yaml_has_data:
+        st.warning("⚠️ Both JSON and YAML inputs contain data. Please use only one format at a time. JSON will be prioritized.")
+        input_format = "JSON"
+        data_input = json_input
+    elif json_has_data:
+        input_format = "JSON"
+        data_input = json_input
+    elif yaml_has_data:
         input_format = "YAML"
         data_input = yaml_input
+    else:
+        input_format = "JSON"  # Default format for error messages
+        data_input = ""
 
     # Generate button
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -213,7 +228,7 @@ projects:
     if generate_button:
         if not data_input.strip():
             st.error(
-                f"Please enter {input_format} data before generating the document."
+                "Please enter JSON or YAML data before generating the document."
             )
             return
 
