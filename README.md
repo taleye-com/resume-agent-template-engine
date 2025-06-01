@@ -8,12 +8,14 @@ A powerful template engine for generating professional resumes and cover letters
 ## Features
 
 - **Multiple Template Support**: Choose from a variety of professionally designed templates
+- **JSON & YAML Support**: Input data in either JSON or YAML format for flexibility
 - **Dynamic Content Generation**: Automatically generate content based on user input
 - **LaTeX-based Templates**: High-quality, customizable templates
 - **RESTful API**: Easy integration with other applications
 - **Template Preview**: Preview templates before generating the final document
 - **Cover Letter Support**: Generate matching cover letters for your resume
 - **Customizable Sections**: Add, remove, or modify sections as needed
+- **CLI Tool**: Command-line interface for batch processing and automation
 
 ## Project Structure
 
@@ -115,32 +117,97 @@ This script will:
 
 ## Usage
 
+### Option 1: Streamlit UI (Recommended for Users)
+
+Launch the user-friendly web interface:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch the UI
+python run_ui.py
+```
+
+Navigate to `http://localhost:8502` for an intuitive form-based interface to:
+- Fill in your information using dynamic forms
+- Input data in JSON or YAML format with syntax highlighting
+- Select from available templates
+- Generate and download professional PDFs
+- Preview templates and understand data schemas
+
+See [UI_README.md](UI_README.md) for detailed UI documentation.
+
+### Option 2: Command Line Interface (For Automation)
+
+The CLI supports both JSON and YAML input formats:
+
+```bash
+# Generate sample data files
+PYTHONPATH=src python -m resume_agent_template_engine.cli sample resume data.json
+PYTHONPATH=src python -m resume_agent_template_engine.cli sample resume data.yaml
+
+# Generate PDF from JSON
+PYTHONPATH=src python -m resume_agent_template_engine.cli generate resume classic data.json output.pdf
+
+# Generate PDF from YAML
+PYTHONPATH=src python -m resume_agent_template_engine.cli generate resume classic data.yaml output.pdf
+
+# List available templates
+PYTHONPATH=src python -m resume_agent_template_engine.cli list
+
+# Get template information
+PYTHONPATH=src python -m resume_agent_template_engine.cli info resume classic
+```
+
+### Option 3: API (For Developers and Integration)
+
 1. Start the server:
    ```bash
    python run.py
    ```
 
 2. Access the API:
-   - Resume generation: `http://localhost:8501/generate-resume`
-   - Cover letter generation: `http://localhost:8501/generate-cover-letter`
-   - Template preview: `http://localhost:8501/preview-template`
+   - Resume generation (JSON): `http://localhost:8501/generate`
+   - Resume generation (YAML): `http://localhost:8501/generate-yaml`
+   - Cover letter generation: `http://localhost:8501/generate`
+   - Template preview: `http://localhost:8501/templates`
+   - Schema information: `http://localhost:8501/schema/{document_type}`
 
-3. Example API request:
+3. Example API requests:
+
+   **JSON Format:**
    ```bash
-   curl -X POST http://localhost:8501/generate-resume \
+   curl -X POST http://localhost:8501/generate \
      -H "Content-Type: application/json" \
      -d '{
-       "template": "modern",
+       "document_type": "resume",
+       "template": "classic",
        "data": {
-         "professional_summary": "...",
+         "personalInfo": {
+           "name": "John Doe",
+           "email": "john@example.com"
+         },
+         "professionalSummary": "...",
          "education": [...],
          "experience": [...],
          "projects": [...],
-         "articles_and_publications": [...],
+         "articlesAndPublications": [...],
          "achievements": [...],
          "certifications": [...],
-         "technologies_and_skills": [...]
+         "technologiesAndSkills": [...]
        }
+     }'
+   ```
+
+   **YAML Format:**
+   ```bash
+   curl -X POST http://localhost:8501/generate-yaml \
+     -H "Content-Type: application/json" \
+     -d '{
+       "document_type": "resume",
+       "template": "classic",
+       "yaml_data": "personalInfo:\n  name: John Doe\n  email: john@example.com\nprofessionalSummary: ..."
      }'
    ```
 
@@ -158,57 +225,128 @@ Each template directory contains:
 
 ## Data Format
 
-The template engine expects data in the following format:
+The template engine accepts data in both JSON and YAML formats:
+
+### JSON Format
 
 ```json
 {
-  "template": "template_name",
-  "data": {
-    "professional_summary": "string",
-    "education": [
-      {
-        "degree": "string",
-        "institution": "string",
-        "location": "string",
-        "date": "string",
-        "details": ["string"]
-      }
-    ],
-    "experience": [
-      {
-        "title": "string",
-        "company": "string",
-        "location": "string",
-        "date": "string",
-        "details": ["string"]
-      }
-    ],
-    "projects": [
-      {
-        "name": "string",
-        "description": "string",
-        "technologies": ["string"]
-      }
-    ],
-    "articles_and_publications": [
-      {
-        "title": "string",
-        "publisher": "string",
-        "date": "string",
-        "url": "string"
-      }
-    ],
-    "achievements": ["string"],
-    "certifications": [
-      {
-        "name": "string",
-        "issuer": "string",
-        "date": "string"
-      }
-    ],
-    "technologies_and_skills": ["string"]
-  }
+  "personalInfo": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+1 (555) 123-4567",
+    "location": "New York, NY",
+    "website": "https://johndoe.dev",
+    "linkedin": "https://linkedin.com/in/johndoe",
+    "website_display": "https://johndoe.dev",
+    "linkedin_display": "https://linkedin.com/in/johndoe"
+  },
+  "professionalSummary": "Experienced software engineer...",
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "University of Technology",
+      "startDate": "2015-09",
+      "endDate": "2019-05"
+    }
+  ],
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Tech Corp",
+      "startDate": "2020-01",
+      "endDate": "Present",
+      "achievements": [
+        "Reduced system latency by 40%",
+        "Led team of 5 engineers"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Cloud Platform",
+      "description": ["Scalable microservices platform"],
+      "tools": ["Python", "Docker", "Kubernetes"]
+    }
+  ],
+  "articlesAndPublications": [
+    {
+      "title": "Microservices Best Practices",
+      "date": "2023-03"
+    }
+  ],
+  "achievements": [
+    "AWS Certified Solutions Architect",
+    "Led migration to cloud-native architecture"
+  ],
+  "certifications": [
+    "AWS Certified Solutions Architect - Professional (2023)"
+  ],
+  "technologiesAndSkills": [
+    {
+      "category": "Programming Languages",
+      "skills": ["Python", "JavaScript", "TypeScript"]
+    }
+  ]
 }
+```
+
+### YAML Format
+
+```yaml
+personalInfo:
+  name: John Doe
+  email: john@example.com
+  phone: "+1 (555) 123-4567"
+  location: New York, NY
+  website: https://johndoe.dev
+  linkedin: https://linkedin.com/in/johndoe
+  website_display: https://johndoe.dev
+  linkedin_display: https://linkedin.com/in/johndoe
+
+professionalSummary: "Experienced software engineer..."
+
+education:
+  - degree: Bachelor of Science in Computer Science
+    institution: University of Technology
+    startDate: "2015-09"
+    endDate: "2019-05"
+
+experience:
+  - title: Senior Software Engineer
+    company: Tech Corp
+    startDate: "2020-01"
+    endDate: Present
+    achievements:
+      - Reduced system latency by 40%
+      - Led team of 5 engineers
+
+projects:
+  - name: Cloud Platform
+    description:
+      - Scalable microservices platform
+    tools:
+      - Python
+      - Docker
+      - Kubernetes
+
+articlesAndPublications:
+  - title: Microservices Best Practices
+    date: "2023-03"
+
+achievements:
+  - AWS Certified Solutions Architect
+  - Led migration to cloud-native architecture
+
+certifications:
+  - "AWS Certified Solutions Architect - Professional (2023)"
+
+technologiesAndSkills:
+  - category: Programming Languages
+    skills:
+      - Python
+      - JavaScript
+      - TypeScript
 ```
 
 ## Development

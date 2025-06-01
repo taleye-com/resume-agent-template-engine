@@ -9,15 +9,15 @@ from resume_agent_template_engine.core.template_engine import (
 )
 
 
-class ModernCoverLetterTemplate(TemplateInterface):
+class ClassicCoverLetterTemplate(TemplateInterface):
     """
-    Helper class for generating a Modern LaTeX cover letter from JSON data.
+    Helper class for generating a Classic LaTeX cover letter from JSON data.
     Handles special characters: &, %, $, #
     """
 
     def __init__(self, data: Dict[str, Any], config: Dict[str, Any] = None) -> None:
         """
-        Initialize the ModernCoverLetterTemplate class.
+        Initialize the ClassicCoverLetterTemplate class.
 
         Args:
             data (dict): The JSON data containing cover letter information.
@@ -29,7 +29,7 @@ class ModernCoverLetterTemplate(TemplateInterface):
         self.data = self.replace_special_chars(data)
         self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
-        self.template_path = os.path.join(self.template_dir, "modern.tex")
+        self.template_path = os.path.join(self.template_dir, "classic.tex")
 
         try:
             with open(self.template_path, "r", encoding="utf-8") as f:
