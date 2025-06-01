@@ -42,6 +42,9 @@ htmlcov/
 .pytest_cache/
 .mypy_cache/
 
+# Internal scripts and tools
+.scripts/
+
 # OS specific
 .DS_Store
 Thumbs.db 
