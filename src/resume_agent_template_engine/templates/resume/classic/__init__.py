@@ -1,3 +1,3 @@
 """
 Resume classic template package.
-""" 
+"""

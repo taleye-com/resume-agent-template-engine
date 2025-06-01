@@ -13,7 +13,7 @@ from resume_agent_template_engine.core.template_engine import (
     TemplateConfig,
     DocumentType,
     OutputFormat,
-    TemplateInterface
+    TemplateInterface,
 )
 
 
@@ -41,7 +41,7 @@ validation:
   strict_mode: true
 """
         config_file.write_text(config_content)
-        
+
         config = TemplateConfig(str(config_file))
         assert config.config["templates"]["base_path"] == "custom_templates"
         assert config.config["rendering"]["latex_engine"] == "xelatex"
@@ -51,8 +51,10 @@ validation:
         """Test config initialization with invalid YAML file"""
         config_file = tmp_path / "invalid.yaml"
         config_file.write_text("invalid: yaml: content:")
-        
-        with patch('resume_agent_template_engine.core.template_engine.logger.warning') as mock_warning:
+
+        with patch(
+            "resume_agent_template_engine.core.template_engine.logger.warning"
+        ) as mock_warning:
             config = TemplateConfig(str(config_file))
             mock_warning.assert_called_once()
             # Should fall back to default config
@@ -83,17 +85,19 @@ class TestTemplateRegistry:
         resume_dir.mkdir(parents=True)
         (resume_dir / "helper.py").write_text("# Mock helper")
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
-        assert hasattr(registry, '_available_templates')
+        assert hasattr(registry, "_available_templates")
         assert "resume" in registry._available_templates
         assert "classic" in registry._available_templates["resume"]
 
     def test_registry_initialization_no_templates_dir(self, tmp_path):
         """Test registry initialization with non-existent templates directory"""
         nonexistent_dir = tmp_path / "nonexistent"
-        
-        with patch('resume_agent_template_engine.core.template_engine.logger.warning') as mock_warning:
+
+        with patch(
+            "resume_agent_template_engine.core.template_engine.logger.warning"
+        ) as mock_warning:
             registry = TemplateRegistry(str(nonexistent_dir))
             mock_warning.assert_called_once()
             assert registry._available_templates == {}
@@ -106,7 +110,7 @@ class TestTemplateRegistry:
         resume_dir.mkdir(parents=True)
         (resume_dir / "helper.py").write_text("# Mock helper")
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
         templates = registry.get_available_templates()
         assert isinstance(templates, dict)
@@ -120,7 +124,7 @@ class TestTemplateRegistry:
         resume_dir.mkdir(parents=True)
         (resume_dir / "helper.py").write_text("# Mock helper")
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
         templates = registry.get_available_templates("resume")
         assert isinstance(templates, list)
@@ -132,17 +136,17 @@ class TestTemplateRegistry:
         templates_dir = tmp_path / "templates"
         resume_dir = templates_dir / "resume" / "classic"
         resume_dir.mkdir(parents=True)
-        
+
         # Create a mock helper.py with a template class
-        helper_content = '''
+        helper_content = """
 class ClassicResumeTemplate:
     def __init__(self, data, config=None):
         self.data = data
         self.config = config or {}
-'''
+"""
         (resume_dir / "helper.py").write_text(helper_content)
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
         template_class = registry.load_template_class("resume", "classic")
         assert template_class.__name__ == "ClassicResumeTemplate"
@@ -151,7 +155,7 @@ class ClassicResumeTemplate:
         """Test loading non-existent template class"""
         templates_dir = tmp_path / "templates"
         registry = TemplateRegistry(str(templates_dir))
-        
+
         with pytest.raises(ValueError, match="Document type 'nonexistent' not found"):
             registry.load_template_class("nonexistent", "classic")
 
@@ -163,9 +167,9 @@ class ClassicResumeTemplate:
         resume_dir.mkdir(parents=True)
         (resume_dir / "helper.py").write_text("# Mock helper")
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
-        
+
         with pytest.raises(ValueError, match="Template 'nonexistent' not found"):
             registry.load_template_class("resume", "nonexistent")
 
@@ -175,22 +179,22 @@ class ClassicResumeTemplate:
         templates_dir = tmp_path / "templates"
         resume_dir = templates_dir / "resume" / "classic"
         resume_dir.mkdir(parents=True)
-        
-        helper_content = '''
+
+        helper_content = """
 class ClassicResumeTemplate:
     def __init__(self, data, config=None):
         self.data = data
         self.config = config or {}
-'''
+"""
         (resume_dir / "helper.py").write_text(helper_content)
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
-        
+
         # Load template class twice
         template_class1 = registry.load_template_class("resume", "classic")
         template_class2 = registry.load_template_class("resume", "classic")
-        
+
         # Should be the same object (cached)
         assert template_class1 is template_class2
 
@@ -200,17 +204,17 @@ class ClassicResumeTemplate:
         templates_dir = tmp_path / "templates"
         resume_dir = templates_dir / "resume" / "classic"
         resume_dir.mkdir(parents=True)
-        
+
         # Create helper with non-standard class name
-        helper_content = '''
+        helper_content = """
 class SomeCustomTemplate:
     def __init__(self, data, config=None):
         self.data = data
         self.config = config or {}
-'''
+"""
         (resume_dir / "helper.py").write_text(helper_content)
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         registry = TemplateRegistry(str(templates_dir))
         template_class = registry.load_template_class("resume", "classic")
         assert template_class.__name__ == "SomeCustomTemplate"
@@ -225,9 +229,9 @@ class TestTemplateEngine:
         templates_dir = tmp_path / "templates"
         resume_dir = templates_dir / "resume" / "classic"
         resume_dir.mkdir(parents=True)
-        
+
         # Create a mock helper.py with a template class
-        helper_content = '''
+        helper_content = """
 from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
 
 class ClassicResumeTemplate(TemplateInterface):
@@ -254,17 +258,17 @@ class ClassicResumeTemplate(TemplateInterface):
     @property
     def template_type(self):
         return DocumentType.RESUME
-'''
+"""
         (resume_dir / "helper.py").write_text(helper_content)
         (resume_dir / "template.tex").write_text("% Mock template")
-        
+
         return TemplateEngine(templates_path=str(templates_dir))
 
     def test_engine_initialization(self, template_engine):
         """Test template engine initialization"""
         assert template_engine.config is not None
         assert template_engine.registry is not None
-        assert hasattr(template_engine, 'templates_path')
+        assert hasattr(template_engine, "templates_path")
 
     def test_get_available_templates(self, template_engine):
         """Test getting available templates"""
@@ -293,50 +297,58 @@ class ClassicResumeTemplate(TemplateInterface):
         sample_data = {"personalInfo": {"name": "John Doe"}}
         template = template_engine.create_template("resume", "classic", sample_data)
         assert template is not None
-        assert hasattr(template, 'data')
+        assert hasattr(template, "data")
         assert template.data == sample_data
 
     def test_create_template_invalid_template(self, template_engine):
         """Test template creation with invalid template"""
         sample_data = {"personalInfo": {"name": "John Doe"}}
-        
+
         with pytest.raises(ValueError, match="Template 'nonexistent' not found"):
             template_engine.create_template("resume", "nonexistent", sample_data)
 
     def test_create_template_validation_error(self, template_engine):
         """Test template creation with validation error"""
         invalid_data = {"invalid": "data"}  # Missing personalInfo
-        
+
         with pytest.raises(ValueError, match="Personal info required"):
             template_engine.create_template("resume", "classic", invalid_data)
 
     def test_render_document_latex(self, template_engine):
         """Test document rendering to LaTeX"""
         sample_data = {"personalInfo": {"name": "John Doe"}}
-        content = template_engine.render_document("resume", "classic", sample_data, OutputFormat.LATEX)
+        content = template_engine.render_document(
+            "resume", "classic", sample_data, OutputFormat.LATEX
+        )
         assert isinstance(content, str)
         assert "documentclass" in content
 
     def test_render_document_pdf_format(self, template_engine):
         """Test document rendering with PDF format (returns LaTeX)"""
         sample_data = {"personalInfo": {"name": "John Doe"}}
-        content = template_engine.render_document("resume", "classic", sample_data, OutputFormat.PDF)
+        content = template_engine.render_document(
+            "resume", "classic", sample_data, OutputFormat.PDF
+        )
         assert isinstance(content, str)
         assert "documentclass" in content
 
     def test_render_document_unsupported_format(self, template_engine):
         """Test document rendering with unsupported format"""
         sample_data = {"personalInfo": {"name": "John Doe"}}
-        
+
         with pytest.raises(ValueError, match="Unsupported output format"):
-            template_engine.render_document("resume", "classic", sample_data, OutputFormat.HTML)
+            template_engine.render_document(
+                "resume", "classic", sample_data, OutputFormat.HTML
+            )
 
     def test_export_to_pdf_success(self, template_engine, tmp_path):
         """Test successful PDF export"""
         sample_data = {"personalInfo": {"name": "John Doe"}}
         output_path = str(tmp_path / "test.pdf")
-        
-        result_path = template_engine.export_to_pdf("resume", "classic", sample_data, output_path)
+
+        result_path = template_engine.export_to_pdf(
+            "resume", "classic", sample_data, output_path
+        )
         assert result_path == output_path
         assert os.path.exists(output_path)
 
@@ -367,11 +379,11 @@ class TestDocumentTypeEnum:
         """Test DocumentType membership"""
         assert DocumentType.RESUME.value == "resume"
         assert DocumentType.COVER_LETTER.value == "cover_letter"
-        
+
         # Test that we can create enum from string values
         assert DocumentType("resume") == DocumentType.RESUME
         assert DocumentType("cover_letter") == DocumentType.COVER_LETTER
-        
+
         # Test invalid values raise ValueError
         with pytest.raises(ValueError):
             DocumentType("invalid")
@@ -391,12 +403,12 @@ class TestOutputFormatEnum:
         assert OutputFormat.PDF.value == "pdf"
         assert OutputFormat.LATEX.value == "latex"
         assert OutputFormat.HTML.value == "html"
-        
+
         # Test that we can create enum from string values
         assert OutputFormat("pdf") == OutputFormat.PDF
         assert OutputFormat("latex") == OutputFormat.LATEX
         assert OutputFormat("html") == OutputFormat.HTML
-        
+
         # Test invalid values raise ValueError
         with pytest.raises(ValueError):
             OutputFormat("invalid")
@@ -412,35 +424,37 @@ class TestTemplateInterface:
 
     def test_template_interface_subclass_requirements(self):
         """Test that TemplateInterface subclasses must implement required methods"""
+
         class IncompleteTemplate(TemplateInterface):
             pass
-        
+
         with pytest.raises(TypeError):
             IncompleteTemplate({"test": "data"})
 
     def test_template_interface_complete_subclass(self):
         """Test a complete TemplateInterface subclass"""
+
         class CompleteTemplate(TemplateInterface):
             def validate_data(self):
                 pass
-            
+
             def render(self):
                 return "rendered content"
-            
+
             def export_to_pdf(self, output_path):
                 return output_path
-            
+
             @property
             def required_fields(self):
                 return ["field1"]
-            
+
             @property
             def template_type(self):
                 return DocumentType.RESUME
-        
+
         template = CompleteTemplate({"test": "data"})
         assert template.data == {"test": "data"}
         assert template.config == {}
         assert template.render() == "rendered content"
         assert template.required_fields == ["field1"]
-        assert template.template_type == DocumentType.RESUME 
+        assert template.template_type == DocumentType.RESUME

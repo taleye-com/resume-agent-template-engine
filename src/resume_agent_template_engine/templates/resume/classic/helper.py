@@ -3,7 +3,11 @@ import subprocess
 import os
 import tempfile
 from typing import Dict, Any, List
-from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
+from resume_agent_template_engine.core.template_engine import (
+    TemplateInterface,
+    DocumentType,
+)
+
 
 class ClassicResumeTemplate(TemplateInterface):
     """
@@ -21,45 +25,47 @@ class ClassicResumeTemplate(TemplateInterface):
         """
         # Initialize parent class
         super().__init__(data, config)
-        
+
         self.data = self.replace_special_chars(data)
         self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
         self.template_path = os.path.join(self.template_dir, "classic.tex")
-        
+
         try:
-            with open(self.template_path, 'r', encoding='utf-8') as f:
+            with open(self.template_path, "r", encoding="utf-8") as f:
                 self.template = f.read()
         except Exception as e:
-            raise IOError(f"Error reading template file {self.template_path}: {e}") from e
+            raise IOError(
+                f"Error reading template file {self.template_path}: {e}"
+            ) from e
 
     def validate_data(self):
         """Ensure all required sections are present in the JSON data."""
         required_sections = [
             "personalInfo",
-            "professionalSummary", 
+            "professionalSummary",
             "education",
-            "experience", 
-            "projects", 
-            "articlesAndPublications", 
+            "experience",
+            "projects",
+            "articlesAndPublications",
             "achievements",
-            "certifications", 
-            "technologiesAndSkills"
+            "certifications",
+            "technologiesAndSkills",
         ]
         for section in required_sections:
             if section not in self.data:
                 raise ValueError(f"Missing required section: {section}")
-        
+
         # Validate personal info fields
         required_personal_info = [
-            "name", 
-            "email", 
-            "phone", 
+            "name",
+            "email",
+            "phone",
             "location",
             "website",
             "website_display",
             "linkedin",
-            "linkedin_display"
+            "linkedin_display",
         ]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
@@ -68,10 +74,12 @@ class ClassicResumeTemplate(TemplateInterface):
     def replace_special_chars(self, data):
         """Recursively replace special LaTeX characters in strings."""
         if isinstance(data, str):
-            return data.replace('&', r'\&') \
-                       .replace('%', r'\%') \
-                       .replace('$', r'\$') \
-                       .replace('#', r'\#')
+            return (
+                data.replace("&", r"\&")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("#", r"\#")
+            )
         if isinstance(data, list):
             return [self.replace_special_chars(item) for item in data]
         if isinstance(data, dict):
@@ -101,32 +109,34 @@ class ClassicResumeTemplate(TemplateInterface):
                 "\\end{highlights}"
             )
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
-        return '\n'.join(sections)
+        return "\n".join(sections)
 
     def generate_experience(self):
         """Generate the Experience section."""
         sections = []
         for exp in self.data["experience"]:
-            start_date = exp.get('startDate', '')
-            end_date = exp.get('endDate', 'Present')
+            start_date = exp.get("startDate", "")
+            end_date = exp.get("endDate", "Present")
             date_range = f"{start_date} -- {end_date}" if start_date else "Present"
 
             entry = (
                 f"\\textbf{{{exp['title']}}}, {exp['company']} \\hfill {date_range}\n"
                 "\\begin{highlights}\n"
-                + '\n'.join([f"\\item {ach}" for ach in exp['achievements']])
+                + "\n".join([f"\\item {ach}" for ach in exp["achievements"]])
                 + "\n\\end{highlights}"
             )
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
-        return '\n'.join(sections)
+        return "\n".join(sections)
 
     def generate_projects(self):
         """Generate the Projects section."""
         sections = []
         for proj in self.data["projects"]:
-            desc_points = ', '.join([f"{desc}" for desc in proj['description']])  # Combine descriptions into a single line
-            achievements = '\n'.join([f"\\item {ach}" for ach in proj['achievements']])
-            
+            desc_points = ", ".join(
+                [f"{desc}" for desc in proj["description"]]
+            )  # Combine descriptions into a single line
+            achievements = "\n".join([f"\\item {ach}" for ach in proj["achievements"]])
+
             entry = (
                 f"\\textbf{{{proj['name']}}} - \\textit{{{desc_points}}}\n"  # Place description side by side with the name
                 "\\begin{highlights}\n"
@@ -138,24 +148,24 @@ class ClassicResumeTemplate(TemplateInterface):
                 "\\end{highlights}"
             )
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
-        return '\n'.join(sections)
+        return "\n".join(sections)
 
     def generate_articles_and_publications(self):
         """Generate the Articles & Publications section."""
-        items = '\n'.join(
-            f"\\item \\textbf{{{pub['title']}}} -- {pub['date']}" 
+        items = "\n".join(
+            f"\\item \\textbf{{{pub['title']}}} -- {pub['date']}"
             for pub in self.data["articlesAndPublications"]
         )
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{items}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_achievements(self):
         """Generate the Achievements section."""
-        bullets = '\n'.join(f"\\item {item}" for item in self.data["achievements"])
+        bullets = "\n".join(f"\\item {item}" for item in self.data["achievements"])
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_certifications(self):
         """Generate the Certifications section."""
-        bullets = '\n'.join(f"\\item {item}" for item in self.data["certifications"])
+        bullets = "\n".join(f"\\item {item}" for item in self.data["certifications"])
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_technologies_and_skills(self):
@@ -164,12 +174,12 @@ class ClassicResumeTemplate(TemplateInterface):
         for skill in self.data["technologiesAndSkills"]:
             entry = f"\\textbf{{{skill['category']}}}: {', '.join(skill['skills'])}"
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
-        return '\n'.join(sections)
+        return "\n".join(sections)
 
     def generate_resume(self):
         """Generate the final LaTeX resume by replacing placeholders."""
         info = self.data["personalInfo"]
-        
+
         # Header replacements
         header_replacements = {
             "{{name}}": info["name"],
@@ -179,9 +189,9 @@ class ClassicResumeTemplate(TemplateInterface):
             "{{website}}": info["website"],
             "{{website_display}}": info["website_display"],
             "{{linkedin}}": info["linkedin"],
-            "{{linkedin_display}}": info["linkedin_display"]
+            "{{linkedin_display}}": info["linkedin_display"],
         }
-        
+
         # Section replacements
         section_replacements = {
             "{{professional_summary}}": self.generate_professional_summary(),
@@ -193,17 +203,17 @@ class ClassicResumeTemplate(TemplateInterface):
             "{{certifications}}": self.generate_certifications(),
             "{{technologies_and_skills}}": self.generate_technologies_and_skills(),
         }
-        
+
         # Combine all replacements
         all_replacements = {**header_replacements, **section_replacements}
-        
+
         resume = self.template
         for ph, content in all_replacements.items():
             resume = resume.replace(ph, content)
 
         if re.search(r"{{.*?}}", resume):
             raise ValueError("Unreplaced placeholders detected")
-            
+
         return resume
 
     def render(self) -> str:
@@ -215,16 +225,16 @@ class ClassicResumeTemplate(TemplateInterface):
         """List of required data fields for this template"""
         return [
             "personalInfo",
-            "professionalSummary", 
+            "professionalSummary",
             "education",
-            "experience", 
-            "projects", 
-            "articlesAndPublications", 
+            "experience",
+            "projects",
+            "articlesAndPublications",
             "achievements",
-            "certifications", 
-            "technologiesAndSkills"
+            "certifications",
+            "technologiesAndSkills",
         ]
-    
+
     @property
     def template_type(self) -> DocumentType:
         """The document type this template handles"""
@@ -237,29 +247,41 @@ class ClassicResumeTemplate(TemplateInterface):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tex_path = os.path.join(tmpdir, "temp.tex")
-            with open(tex_path, 'w', encoding='utf-8') as f:
+            with open(tex_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
             try:
                 subprocess.run(
-                    ["pdflatex", "-interaction=nonstopmode", f"-output-directory={tmpdir}", tex_path],
+                    [
+                        "pdflatex",
+                        "-interaction=nonstopmode",
+                        f"-output-directory={tmpdir}",
+                        tex_path,
+                    ],
                     check=True,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
                 subprocess.run(
-                    ["pdflatex", "-interaction=nonstopmode", f"-output-directory={tmpdir}", tex_path],
+                    [
+                        "pdflatex",
+                        "-interaction=nonstopmode",
+                        f"-output-directory={tmpdir}",
+                        tex_path,
+                    ],
                     check=True,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
             except subprocess.CalledProcessError as e:
-                raise RuntimeError("PDF compilation failed. Ensure pdflatex is installed.") from e
+                raise RuntimeError(
+                    "PDF compilation failed. Ensure pdflatex is installed."
+                ) from e
 
             pdf_path = os.path.join(tmpdir, "temp.pdf")
             if os.path.exists(pdf_path):
                 os.replace(pdf_path, output_path)
             else:
                 raise FileNotFoundError("PDF output not generated")
-            
+
         return output_path

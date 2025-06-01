@@ -15,7 +15,9 @@ class TemplateEditing:
     For new code, use TemplateEngine directly.
     """
 
-    def __init__(self, data: Dict[str, Any], template_category: str, template_name: str):
+    def __init__(
+        self, data: Dict[str, Any], template_category: str, template_name: str
+    ):
         """
         Initialize the TemplateEditing class.
 
@@ -34,10 +36,12 @@ class TemplateEditing:
 
         # Validate that the template exists
         available_templates = self.template_engine.get_available_templates(
-            template_category)
+            template_category
+        )
         if template_name not in available_templates:
             raise ValueError(
-                f"Template '{template_name}' not found in category '{template_category}'")
+                f"Template '{template_name}' not found in category '{template_category}'"
+            )
 
     def generate_document(self):
         """
@@ -48,9 +52,7 @@ class TemplateEditing:
         """
         # Use the new template engine to render the document
         return self.template_engine.render_document(
-            self.template_category,
-            self.template_name,
-            self.data
+            self.template_category, self.template_name, self.data
         )
 
     def export_to_pdf(self, output_path: str | None = None) -> str:
@@ -71,8 +73,5 @@ class TemplateEditing:
 
         # Use the new template engine to generate the PDF
         return self.template_engine.export_to_pdf(
-            self.template_category,
-            self.template_name,
-            self.data,
-            output_path
+            self.template_category, self.template_name, self.data, output_path
         )

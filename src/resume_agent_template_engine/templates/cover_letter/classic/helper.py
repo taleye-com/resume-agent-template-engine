@@ -3,7 +3,11 @@ import subprocess
 import os
 import tempfile
 from typing import Dict, Any, List
-from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
+from resume_agent_template_engine.core.template_engine import (
+    TemplateInterface,
+    DocumentType,
+)
+
 
 class ModernCoverLetterTemplate(TemplateInterface):
     """
@@ -21,17 +25,19 @@ class ModernCoverLetterTemplate(TemplateInterface):
         """
         # Initialize parent class
         super().__init__(data, config)
-        
+
         self.data = self.replace_special_chars(data)
         self.output_path: str = "output.pdf"
         self.template_dir = os.path.dirname(os.path.abspath(__file__))
         self.template_path = os.path.join(self.template_dir, "modern.tex")
-        
+
         try:
-            with open(self.template_path, 'r', encoding='utf-8') as f:
+            with open(self.template_path, "r", encoding="utf-8") as f:
                 self.template = f.read()
         except Exception as e:
-            raise IOError(f"Error reading template file {self.template_path}: {e}") from e
+            raise IOError(
+                f"Error reading template file {self.template_path}: {e}"
+            ) from e
 
     def validate_data(self):
         """Ensure all required sections are present in the JSON data."""
@@ -42,29 +48,29 @@ class ModernCoverLetterTemplate(TemplateInterface):
             "date",
             "salutation",
             "body",
-            "closing"
+            "closing",
         ]
         for section in required_sections:
             if section not in self.data:
                 raise ValueError(f"Missing required section: {section}")
-        
+
         # Validate personal info fields
         required_personal_info = [
-            "name", 
-            "email", 
-            "phone", 
+            "name",
+            "email",
+            "phone",
             "location",
             "website",
-            "website_display"
+            "website_display",
         ]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
                 raise ValueError(f"Missing required personal info field: {field}")
-        
+
         # Validate recipient
         if not isinstance(self.data["recipient"], dict):
             raise ValueError("Recipient must be a dictionary")
-        
+
         # Check if body is a list of paragraphs
         if not isinstance(self.data["body"], list):
             raise ValueError("Body must be a list of paragraphs")
@@ -72,10 +78,12 @@ class ModernCoverLetterTemplate(TemplateInterface):
     def replace_special_chars(self, data):
         """Recursively replace special LaTeX characters in strings."""
         if isinstance(data, str):
-            return data.replace('&', r'\&') \
-                       .replace('%', r'\%') \
-                       .replace('$', r'\$') \
-                       .replace('#', r'\#')
+            return (
+                data.replace("&", r"\&")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("#", r"\#")
+            )
         if isinstance(data, list):
             return [self.replace_special_chars(item) for item in data]
         if isinstance(data, dict):
@@ -84,24 +92,24 @@ class ModernCoverLetterTemplate(TemplateInterface):
 
     def generate_recipient_address(self):
         """Format recipient information with LaTeX line breaks."""
-        recipient = self.data['recipient']
+        recipient = self.data["recipient"]
         lines = [
-            recipient.get('name', ''),
-            recipient.get('title', ''),
-            recipient.get('company', '')
+            recipient.get("name", ""),
+            recipient.get("title", ""),
+            recipient.get("company", ""),
         ]
-        
+
         # Add address lines if present
-        if 'address' in recipient and isinstance(recipient['address'], list):
-            lines.extend(recipient['address'])
-        
+        if "address" in recipient and isinstance(recipient["address"], list):
+            lines.extend(recipient["address"])
+
         # Filter out empty lines and join with LaTeX line break
-        return ' \\\\\n'.join(filter(None, lines))
+        return " \\\\\n".join(filter(None, lines))
 
     def generate_cover_letter(self):
         """Generate the final LaTeX cover letter by replacing placeholders."""
         info = self.data["personalInfo"]
-        
+
         # Header replacements
         header_replacements = {
             "{{name}}": info["name"],
@@ -109,29 +117,29 @@ class ModernCoverLetterTemplate(TemplateInterface):
             "{{email}}": info["email"],
             "{{phone}}": info["phone"],
             "{{website}}": info["website"],
-            "{{website_display}}": info["website_display"]
+            "{{website_display}}": info["website_display"],
         }
-        
+
         # Content replacements
         content_replacements = {
             "{{recipient_address}}": self.generate_recipient_address(),
             "{{date}}": self.data["date"],
             "{{salutation}}": self.data["salutation"],
-            "{{body_content}}": '\n\n'.join(self.data["body"]),
-            "{{closing}}": self.data["closing"]
+            "{{body_content}}": "\n\n".join(self.data["body"]),
+            "{{closing}}": self.data["closing"],
         }
-        
+
         # Combine all replacements
         all_replacements = {**header_replacements, **content_replacements}
-        
+
         cover_letter = self.template
         for placeholder, content in all_replacements.items():
             cover_letter = cover_letter.replace(placeholder, content)
-        
+
         # Check for unreplaced placeholders
         if re.search(r"{{.*?}}", cover_letter):
             raise ValueError("Unreplaced placeholders detected")
-        
+
         return cover_letter
 
     def render(self) -> str:
@@ -141,15 +149,8 @@ class ModernCoverLetterTemplate(TemplateInterface):
     @property
     def required_fields(self) -> List[str]:
         """List of required data fields for this template"""
-        return [
-            "personalInfo",
-            "recipient", 
-            "date",
-            "salutation",
-            "body",
-            "closing"
-        ]
-    
+        return ["personalInfo", "recipient", "date", "salutation", "body", "closing"]
+
     @property
     def template_type(self) -> DocumentType:
         """The document type this template handles"""
@@ -159,32 +160,44 @@ class ModernCoverLetterTemplate(TemplateInterface):
         """Compile LaTeX content to PDF using pdflatex"""
         self.output_path = output_path
         content = self.generate_cover_letter()
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tex_path = os.path.join(tmpdir, "temp.tex")
-            with open(tex_path, 'w', encoding='utf-8') as f:
+            with open(tex_path, "w", encoding="utf-8") as f:
                 f.write(content)
-            
+
             try:
                 subprocess.run(
-                    ["pdflatex", "-interaction=nonstopmode", f"-output-directory={tmpdir}", tex_path],
+                    [
+                        "pdflatex",
+                        "-interaction=nonstopmode",
+                        f"-output-directory={tmpdir}",
+                        tex_path,
+                    ],
                     check=True,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
                 subprocess.run(
-                    ["pdflatex", "-interaction=nonstopmode", f"-output-directory={tmpdir}", tex_path],
+                    [
+                        "pdflatex",
+                        "-interaction=nonstopmode",
+                        f"-output-directory={tmpdir}",
+                        tex_path,
+                    ],
                     check=True,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
             except subprocess.CalledProcessError as e:
-                raise RuntimeError("PDF compilation failed. Ensure pdflatex is installed.") from e
-            
+                raise RuntimeError(
+                    "PDF compilation failed. Ensure pdflatex is installed."
+                ) from e
+
             pdf_path = os.path.join(tmpdir, "temp.pdf")
             if os.path.exists(pdf_path):
                 os.replace(pdf_path, output_path)
             else:
                 raise FileNotFoundError("PDF output not generated")
-        
-        return output_path 
+
+        return output_path

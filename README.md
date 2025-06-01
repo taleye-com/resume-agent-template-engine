@@ -59,9 +59,32 @@ resume-agent-template-engine/
 
 ## Installation
 
+### Quick Setup (Recommended for Developers)
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/resume-agent-template-engine.git
+   git clone https://github.com/taleye-com/resume-agent-template-engine
+   cd resume-agent-template-engine
+   ```
+
+2. Run the development setup script:
+   ```bash
+   chmod +x setup-dev.sh
+   ./setup-dev.sh
+   ```
+
+This script will:
+- Create a virtual environment
+- Install all dependencies
+- Set up pre-commit hooks
+- Format the code
+- Run tests to ensure everything works
+
+### Manual Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/taleye-com/resume-agent-template-engine
    cd resume-agent-template-engine
    ```
 
@@ -74,9 +97,15 @@ resume-agent-template-engine/
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   pip install -r requirements-dev.txt  # For development
    ```
 
-4. Install LaTeX:
+4. Install pre-commit hooks (for development):
+   ```bash
+   pre-commit install
+   ```
+
+5. Install LaTeX:
    - **Windows**: Install [MiKTeX](https://miktex.org/download)
    - **macOS**: Install [MacTeX](https://www.tug.org/mactex/)
    - **Linux**: Install TeX Live:
@@ -184,11 +213,63 @@ The template engine expects data in the following format:
 
 ## Development
 
+### Code Quality and CI/CD
+
 The project uses GitHub Actions for continuous integration and deployment. The workflow includes:
 
-- Running tests across Python 3.10
-- Code coverage reporting
-- Linting with black and mypy
+- **Linting**: Code formatting checks with Black and type checking with MyPy
+- **Testing**: Comprehensive test suite with coverage reporting
+- **Code Coverage**: Automated coverage reporting with Codecov
+
+#### Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality:
+
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run hooks manually
+pre-commit run --all-files
+```
+
+#### Running Tests
+
+```bash
+# Run all tests with coverage
+cd src
+PYTHONPATH=$PYTHONPATH:$(pwd) pytest ../tests/ --cov=resume_agent_template_engine --cov-report=term
+
+# Run specific test types
+pytest ../tests/unit/          # Unit tests only
+pytest ../tests/integration/   # Integration tests only
+pytest ../tests/e2e/          # End-to-end tests only
+```
+
+#### Code Formatting
+
+```bash
+# Format code
+black src/ tests/
+
+# Check formatting without making changes
+black --check src/ tests/
+```
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`/.github/workflows/ci.yml`) runs:
+
+1. **Lint Job**: Code formatting and type checking
+2. **Test Job**: Comprehensive test suite with coverage reporting
+
+### Troubleshooting CI Issues
+
+If the CI is failing:
+
+1. **Code Formatting Issues**: Run `black src/ tests/` locally and commit the changes
+2. **Test Failures**: Run tests locally to identify and fix issues
+3. **Codecov Rate Limiting**: This is temporary and doesn't affect the build status
 
 To contribute, please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 

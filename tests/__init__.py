@@ -4,4 +4,4 @@ This package contains comprehensive tests for all components of the resume agent
 including unit tests, integration tests, and end-to-end tests.
 """
 
-__version__ = "1.0.0" 
+__version__ = "1.0.0"

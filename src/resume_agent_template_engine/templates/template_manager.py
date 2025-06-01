@@ -7,7 +7,7 @@ from resume_agent_template_engine.core.template_engine import TemplateEngine
 class TemplateManager:
     """
     A class for managing and accessing different templates in the resume agent system.
-    
+
     WARNING: This class is deprecated. Use TemplateEngine from resume_agent_template_engine.core.template_engine instead.
     This class is maintained for backward compatibility only.
     """
@@ -23,9 +23,9 @@ class TemplateManager:
             "TemplateManager is deprecated. Use TemplateEngine from "
             "resume_agent_template_engine.core.template_engine instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-        
+
         self.templates_dir = templates_dir
         # Use the new TemplateEngine internally for backward compatibility
         self._engine = TemplateEngine(templates_path=templates_dir)
@@ -43,14 +43,15 @@ class TemplateManager:
         # Check if templates directory exists
         if not os.path.exists(self.templates_dir):
             raise FileNotFoundError(
-                f"Templates directory not found: {self.templates_dir}")
+                f"Templates directory not found: {self.templates_dir}"
+            )
 
         # Scan for template categories (resume, cover_letter, etc.)
         for category in os.listdir(self.templates_dir):
             category_path = os.path.join(self.templates_dir, category)
 
             # Skip files and special directories
-            if not os.path.isdir(category_path) or category.startswith('__'):
+            if not os.path.isdir(category_path) or category.startswith("__"):
                 continue
 
             templates[category] = []
@@ -60,13 +61,12 @@ class TemplateManager:
                 template_path = os.path.join(category_path, template_name)
 
                 # Skip files and special directories
-                if not os.path.isdir(template_path) or template_name.startswith('__'):
+                if not os.path.isdir(template_path) or template_name.startswith("__"):
                     continue
 
                 # Verify it has a helper.py file and a .tex file
                 helper_path = os.path.join(template_path, "helper.py")
-                tex_files = [f for f in os.listdir(
-                    template_path) if f.endswith('.tex')]
+                tex_files = [f for f in os.listdir(template_path) if f.endswith(".tex")]
 
                 if os.path.exists(helper_path) and tex_files:
                     templates[category].append(template_name)
@@ -89,7 +89,7 @@ class TemplateManager:
     def load_template(self, category, template_name):
         """
         Load a template class by category and name.
-        
+
         DEPRECATED: This method is kept for backward compatibility.
         Use TemplateEngine.create_template() instead.
 
@@ -109,11 +109,13 @@ class TemplateManager:
 
         # Construct the path to the helper.py file
         helper_path = os.path.join(
-            self.templates_dir, category, template_name, "helper.py")
+            self.templates_dir, category, template_name, "helper.py"
+        )
 
         # Load the module dynamically
         spec = importlib.util.spec_from_file_location(
-            f"{category}_{template_name}", helper_path)
+            f"{category}_{template_name}", helper_path
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -123,8 +125,7 @@ class TemplateManager:
 
         # For categories with underscores like "cover_letter", convert to CamelCase
         if "_" in category:
-            category_camel = ''.join(x.capitalize()
-                                     for x in category.split('_'))
+            category_camel = "".join(x.capitalize() for x in category.split("_"))
         else:
             category_camel = category.capitalize()
 
@@ -135,7 +136,7 @@ class TemplateManager:
             # CoverLetterModernTemplate
             f"{category_camel}{template_name.capitalize()}Template",
             # ModernTemplate
-            f"{template_name.capitalize()}Template"
+            f"{template_name.capitalize()}Template",
         ]
 
         # Try each possible class name
@@ -144,14 +145,18 @@ class TemplateManager:
                 return getattr(module, class_name)
 
         # If we get here, no matching class was found
-        class_list = [name for name in dir(module) if not name.startswith(
-            '_') and name.endswith('Template')]
+        class_list = [
+            name
+            for name in dir(module)
+            if not name.startswith("_") and name.endswith("Template")
+        ]
         if class_list:
             # If we found any template class, return the first one
             return getattr(module, class_list[0])
 
         raise ValueError(
-            f"Template class not found in {helper_path}. Tried: {', '.join(class_name_options)}")
+            f"Template class not found in {helper_path}. Tried: {', '.join(class_name_options)}"
+        )
 
     def create_template(self, category, template_name, data):
         """

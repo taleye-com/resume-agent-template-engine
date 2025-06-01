@@ -11,11 +11,15 @@ from unittest.mock import MagicMock, patch
 
 # Add the src directory to Python path for imports
 import sys
+
 project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
-from resume_agent_template_engine.core.template_engine import TemplateEngine, DocumentType
+from resume_agent_template_engine.core.template_engine import (
+    TemplateEngine,
+    DocumentType,
+)
 from resume_agent_template_engine.templates.template_manager import TemplateManager
 
 
@@ -52,7 +56,7 @@ def sample_personal_info() -> Dict[str, Any]:
         "website": "https://johndoe.dev",
         "linkedin": "https://linkedin.com/in/johndoe",
         "website_display": "https://johndoe.dev",
-        "linkedin_display": "https://linkedin.com/in/johndoe"
+        "linkedin_display": "https://linkedin.com/in/johndoe",
     }
 
 
@@ -72,8 +76,8 @@ def sample_resume_data(sample_personal_info: Dict[str, Any]) -> Dict[str, Any]:
                 "description": [
                     "Led development of microservices architecture",
                     "Mentored junior developers",
-                    "Improved system performance by 40%"
-                ]
+                    "Improved system performance by 40%",
+                ],
             },
             {
                 "title": "Software Engineer",
@@ -84,32 +88,32 @@ def sample_resume_data(sample_personal_info: Dict[str, Any]) -> Dict[str, Any]:
                 "description": [
                     "Developed RESTful APIs using FastAPI",
                     "Implemented CI/CD pipelines",
-                    "Built responsive web applications"
-                ]
-            }
+                    "Built responsive web applications",
+                ],
+            },
         ],
         "education": [
             {
                 "degree": "Bachelor of Science in Computer Science",
                 "school": "University of California, Berkeley",
                 "location": "Berkeley, CA",
-                "graduationDate": "2019-05"
+                "graduationDate": "2019-05",
             }
         ],
         "skills": {
             "programming": ["Python", "JavaScript", "TypeScript", "Java"],
             "frameworks": ["FastAPI", "React", "Node.js", "Django"],
             "databases": ["PostgreSQL", "MongoDB", "Redis"],
-            "tools": ["Docker", "Kubernetes", "AWS", "Git"]
+            "tools": ["Docker", "Kubernetes", "AWS", "Git"],
         },
         "projects": [
             {
                 "name": "Resume Builder API",
                 "description": "A FastAPI-based service for generating professional resumes from JSON data",
                 "technologies": ["Python", "FastAPI", "PostgreSQL"],
-                "url": "https://github.com/johndoe/resume-api"
+                "url": "https://github.com/johndoe/resume-api",
             }
-        ]
+        ],
     }
 
 
@@ -122,18 +126,18 @@ def sample_cover_letter_data(sample_personal_info: Dict[str, Any]) -> Dict[str, 
             "name": "Jane Smith",
             "title": "Hiring Manager",
             "company": "Amazing Company",
-            "address": "123 Business St, San Francisco, CA 94105"
+            "address": "123 Business St, San Francisco, CA 94105",
         },
         "jobTitle": "Senior Software Engineer",
         "content": {
             "opening": "I am writing to express my strong interest in the Senior Software Engineer position at Amazing Company.",
             "body": [
                 "With over 5 years of experience in software development, I have developed strong skills in Python, web development, and system architecture.",
-                "In my current role at Tech Corp, I have successfully led multiple projects and mentored junior developers, resulting in improved team productivity and code quality."
+                "In my current role at Tech Corp, I have successfully led multiple projects and mentored junior developers, resulting in improved team productivity and code quality.",
             ],
-            "closing": "I am excited about the opportunity to contribute to Amazing Company's innovative projects and would welcome the chance to discuss how my skills align with your team's needs."
+            "closing": "I am excited about the opportunity to contribute to Amazing Company's innovative projects and would welcome the chance to discuss how my skills align with your team's needs.",
         },
-        "date": "2024-01-15"
+        "date": "2024-01-15",
     }
 
 
@@ -155,9 +159,9 @@ def mock_template_dir(temp_dir: Path) -> Path:
     # Create resume templates
     resume_dir = temp_dir / "resume" / "classic"
     resume_dir.mkdir(parents=True)
-    
+
     # Create helper.py
-    helper_content = '''
+    helper_content = """
 from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
 from typing import Dict, Any, List
 
@@ -183,16 +187,16 @@ class ClassicResumeTemplate(TemplateInterface):
     @property
     def template_type(self) -> DocumentType:
         return DocumentType.RESUME
-'''
-    
+"""
+
     (resume_dir / "helper.py").write_text(helper_content)
     (resume_dir / "template.tex").write_text("\\documentclass{article}")
-    
+
     # Create cover letter templates
     cover_dir = temp_dir / "cover_letter" / "classic"
     cover_dir.mkdir(parents=True)
-    
-    cover_helper_content = '''
+
+    cover_helper_content = """
 from resume_agent_template_engine.core.template_engine import TemplateInterface, DocumentType
 from typing import Dict, Any, List
 
@@ -218,11 +222,11 @@ class ClassicCoverLetterTemplate(TemplateInterface):
     @property
     def template_type(self) -> DocumentType:
         return DocumentType.COVER_LETTER
-'''
-    
+"""
+
     (cover_dir / "helper.py").write_text(cover_helper_content)
     (cover_dir / "template.tex").write_text("\\documentclass{letter}")
-    
+
     return temp_dir
 
 
@@ -231,7 +235,7 @@ def api_client():
     """Create a test client for the FastAPI application."""
     from fastapi.testclient import TestClient
     from resume_agent_template_engine.api.app import app
-    
+
     return TestClient(app)
 
 
@@ -240,7 +244,7 @@ def client():
     """Alias for api_client fixture for backward compatibility."""
     from fastapi.testclient import TestClient
     from resume_agent_template_engine.api.app import app
-    
+
     return TestClient(app)
 
 
@@ -248,6 +252,7 @@ def client():
 def setup_logging():
     """Setup logging for tests."""
     import logging
+
     logging.basicConfig(level=logging.DEBUG)
 
 
@@ -255,7 +260,7 @@ def setup_logging():
 @pytest.fixture
 def mock_pdflatex():
     """Mock pdflatex command for testing."""
-    with patch('subprocess.run') as mock_run:
+    with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
         mock_run.return_value.stdout = b"pdflatex output"
         mock_run.return_value.stderr = b""
@@ -265,12 +270,8 @@ def mock_pdflatex():
 @pytest.fixture
 def mock_file_operations():
     """Mock file operations for testing."""
-    with patch('os.path.exists') as mock_exists, \
-         patch('os.makedirs') as mock_makedirs, \
-         patch('shutil.copy2') as mock_copy:
+    with patch("os.path.exists") as mock_exists, patch(
+        "os.makedirs"
+    ) as mock_makedirs, patch("shutil.copy2") as mock_copy:
         mock_exists.return_value = True
-        yield {
-            'exists': mock_exists,
-            'makedirs': mock_makedirs,
-            'copy': mock_copy
-        } 
+        yield {"exists": mock_exists, "makedirs": mock_makedirs, "copy": mock_copy}

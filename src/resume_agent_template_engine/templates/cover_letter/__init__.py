@@ -1,3 +1,3 @@
 """
 Cover letter templates package.
-""" 
+"""

@@ -15,22 +15,24 @@ from typing import Dict, Any
 import logging
 
 from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine, 
-    DocumentType, 
-    OutputFormat
+    TemplateEngine,
+    DocumentType,
+    OutputFormat,
 )
+
 
 def setup_logging(level: str = "INFO"):
     """Setup logging configuration"""
     logging.basicConfig(
         level=getattr(logging, level.upper()),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
 
 def load_data_file(file_path: str) -> Dict[str, Any]:
     """Load data from JSON file"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"Error: Data file not found: {file_path}")
@@ -39,10 +41,11 @@ def load_data_file(file_path: str) -> Dict[str, Any]:
         print(f"Error: Invalid JSON in {file_path}: {e}")
         sys.exit(1)
 
+
 def create_sample_data(document_type: str, output_path: str):
     """Create a sample data file for the specified document type"""
     sample_data = {}
-    
+
     if document_type == "resume":
         sample_data = {
             "personalInfo": {
@@ -53,7 +56,7 @@ def create_sample_data(document_type: str, output_path: str):
                 "website": "https://johndoe.dev",
                 "linkedin": "https://linkedin.com/in/johndoe",
                 "website_display": "https://johndoe.dev",
-                "linkedin_display": "https://linkedin.com/in/johndoe"
+                "linkedin_display": "https://linkedin.com/in/johndoe",
             },
             "summary": "Experienced software engineer with 5+ years of expertise in full-stack development, cloud architecture, and team leadership.",
             "experience": [
@@ -66,8 +69,8 @@ def create_sample_data(document_type: str, output_path: str):
                     "description": "Lead development of cloud-native applications serving 1M+ users",
                     "achievements": [
                         "Reduced system latency by 40% through optimization",
-                        "Led team of 5 engineers in agile development practices"
-                    ]
+                        "Led team of 5 engineers in agile development practices",
+                    ],
                 }
             ],
             "education": [
@@ -76,23 +79,23 @@ def create_sample_data(document_type: str, output_path: str):
                     "institution": "University of Technology",
                     "graduationDate": "2019-05",
                     "gpa": "3.8/4.0",
-                    "honors": ["Summa Cum Laude", "Dean's List"]
+                    "honors": ["Summa Cum Laude", "Dean's List"],
                 }
             ],
             "skills": {
                 "technical": ["Python", "JavaScript", "React", "AWS", "Docker"],
-                "soft": ["Leadership", "Communication", "Problem Solving"]
+                "soft": ["Leadership", "Communication", "Problem Solving"],
             },
             "certifications": [
                 {
                     "name": "AWS Certified Solutions Architect",
                     "issuer": "Amazon Web Services",
                     "date": "2021-03",
-                    "expirationDate": "2024-03"
+                    "expirationDate": "2024-03",
                 }
-            ]
+            ],
         }
-    
+
     elif document_type == "cover_letter":
         sample_data = {
             "personalInfo": {
@@ -101,39 +104,37 @@ def create_sample_data(document_type: str, output_path: str):
                 "phone": "+1 (555) 123-4567",
                 "location": "New York, NY",
                 "website": "https://johndoe.dev",
-                "website_display": "johndoe.dev"
+                "website_display": "johndoe.dev",
             },
             "recipient": {
                 "name": "Jane Smith",
                 "title": "Hiring Manager",
                 "company": "Innovative Tech Solutions",
-                "address": [
-                    "123 Business Ave",
-                    "New York, NY 10001"
-                ]
+                "address": ["123 Business Ave", "New York, NY 10001"],
             },
             "date": "March 15, 2024",
             "salutation": "Dear Ms. Smith,",
             "body": [
                 "I am writing to express my strong interest in the Senior Software Engineer position at Innovative Tech Solutions. With over 5 years of experience in full-stack development and a proven track record of delivering scalable solutions, I am excited about the opportunity to contribute to your team's success.",
                 "In my current role at Tech Corp, I have led the development of cloud-native applications serving over 1 million users, where I reduced system latency by 40% through strategic optimization and architectural improvements. My experience in leading agile development teams and implementing best practices aligns perfectly with your requirements for this position.",
-                "I am particularly drawn to Innovative Tech Solutions' commitment to cutting-edge technology and innovation. I would welcome the opportunity to discuss how my skills in Python, cloud architecture, and team leadership can contribute to your upcoming projects."
+                "I am particularly drawn to Innovative Tech Solutions' commitment to cutting-edge technology and innovation. I would welcome the opportunity to discuss how my skills in Python, cloud architecture, and team leadership can contribute to your upcoming projects.",
             ],
-            "closing": "Sincerely,\nJohn Doe"
+            "closing": "Sincerely,\nJohn Doe",
         }
-    
+
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(sample_data, f, indent=2)
         print(f"Sample {document_type} data created: {output_path}")
     except Exception as e:
         print(f"Error creating sample data: {e}")
         sys.exit(1)
 
+
 def list_templates(engine: TemplateEngine, document_type: str = None):
     """List available templates"""
     templates = engine.get_available_templates(document_type)
-    
+
     if document_type:
         print(f"\nAvailable {document_type} templates:")
         for template in templates:
@@ -145,6 +146,7 @@ def list_templates(engine: TemplateEngine, document_type: str = None):
             for template in template_list:
                 print(f"  - {template}")
 
+
 def show_template_info(engine: TemplateEngine, document_type: str, template_name: str):
     """Show detailed information about a template"""
     try:
@@ -155,50 +157,60 @@ def show_template_info(engine: TemplateEngine, document_type: str, template_name
         print(f"  Description: {info['description']}")
         print(f"  Class: {info['class_name']}")
         print(f"  Required Fields: {', '.join(info['required_fields'])}")
-        if info['preview_path']:
+        if info["preview_path"]:
             print(f"  Preview: {info['preview_path']}")
     except Exception as e:
         print(f"Error getting template info: {e}")
         sys.exit(1)
 
-def generate_document(engine: TemplateEngine, 
-                     document_type: str, 
-                     template_name: str,
-                     data_file: str,
-                     output_path: str,
-                     output_format: str):
+
+def generate_document(
+    engine: TemplateEngine,
+    document_type: str,
+    template_name: str,
+    data_file: str,
+    output_path: str,
+    output_format: str,
+):
     """Generate a document using the template engine"""
-    
+
     # Load data
     data = load_data_file(data_file)
-    
+
     # Validate template
     if not engine.validate_template(document_type, template_name):
-        print(f"Error: Template '{template_name}' not found for document type '{document_type}'")
+        print(
+            f"Error: Template '{template_name}' not found for document type '{document_type}'"
+        )
         available = engine.get_available_templates(document_type)
         print(f"Available templates: {', '.join(available)}")
         sys.exit(1)
-    
+
     try:
         if output_format.lower() == "pdf":
             # Generate PDF
-            result_path = engine.export_to_pdf(document_type, template_name, data, output_path)
+            result_path = engine.export_to_pdf(
+                document_type, template_name, data, output_path
+            )
             print(f"PDF generated successfully: {result_path}")
-        
+
         elif output_format.lower() == "latex":
             # Generate LaTeX content
-            content = engine.render_document(document_type, template_name, data, OutputFormat.LATEX)
-            with open(output_path, 'w', encoding='utf-8') as f:
+            content = engine.render_document(
+                document_type, template_name, data, OutputFormat.LATEX
+            )
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(content)
             print(f"LaTeX content generated: {output_path}")
-        
+
         else:
             print(f"Error: Unsupported output format: {output_format}")
             sys.exit(1)
-            
+
     except Exception as e:
         print(f"Error generating document: {e}")
         sys.exit(1)
+
 
 def main():
     """Main CLI entry point"""
@@ -224,87 +236,95 @@ Examples:
 
   # Generate LaTeX source
   python -m resume_agent_template_engine.cli generate cover_letter classic cover_letter_data.json cover_letter.tex --format latex
-        """
+        """,
     )
-    
-    parser.add_argument('--config', '-c', 
-                       help='Path to YAML configuration file')
-    parser.add_argument('--templates-path', '-t',
-                       help='Path to templates directory')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='Enable verbose logging')
-    
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    
+
+    parser.add_argument("--config", "-c", help="Path to YAML configuration file")
+    parser.add_argument("--templates-path", "-t", help="Path to templates directory")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
     # List command
-    list_parser = subparsers.add_parser('list', help='List available templates')
-    list_parser.add_argument('--type', choices=['resume', 'cover_letter'],
-                            help='Filter by document type')
-    
+    list_parser = subparsers.add_parser("list", help="List available templates")
+    list_parser.add_argument(
+        "--type", choices=["resume", "cover_letter"], help="Filter by document type"
+    )
+
     # Info command
-    info_parser = subparsers.add_parser('info', help='Show template information')
-    info_parser.add_argument('document_type', choices=['resume', 'cover_letter'],
-                            help='Document type')
-    info_parser.add_argument('template_name', help='Template name')
-    
+    info_parser = subparsers.add_parser("info", help="Show template information")
+    info_parser.add_argument(
+        "document_type", choices=["resume", "cover_letter"], help="Document type"
+    )
+    info_parser.add_argument("template_name", help="Template name")
+
     # Sample command
-    sample_parser = subparsers.add_parser('sample', help='Create sample data file')
-    sample_parser.add_argument('document_type', choices=['resume', 'cover_letter'],
-                              help='Document type')
-    sample_parser.add_argument('output_path', help='Output file path')
-    
+    sample_parser = subparsers.add_parser("sample", help="Create sample data file")
+    sample_parser.add_argument(
+        "document_type", choices=["resume", "cover_letter"], help="Document type"
+    )
+    sample_parser.add_argument("output_path", help="Output file path")
+
     # Generate command
-    generate_parser = subparsers.add_parser('generate', help='Generate document')
-    generate_parser.add_argument('document_type', choices=['resume', 'cover_letter'],
-                                help='Document type')
-    generate_parser.add_argument('template_name', help='Template name')
-    generate_parser.add_argument('data_file', help='JSON data file')
-    generate_parser.add_argument('output_path', help='Output file path')
-    generate_parser.add_argument('--format', '-f', choices=['pdf', 'latex'], 
-                                default='pdf', help='Output format (default: pdf)')
-    
+    generate_parser = subparsers.add_parser("generate", help="Generate document")
+    generate_parser.add_argument(
+        "document_type", choices=["resume", "cover_letter"], help="Document type"
+    )
+    generate_parser.add_argument("template_name", help="Template name")
+    generate_parser.add_argument("data_file", help="JSON data file")
+    generate_parser.add_argument("output_path", help="Output file path")
+    generate_parser.add_argument(
+        "--format",
+        "-f",
+        choices=["pdf", "latex"],
+        default="pdf",
+        help="Output format (default: pdf)",
+    )
+
     args = parser.parse_args()
-    
+
     # Setup logging
     log_level = "DEBUG" if args.verbose else "INFO"
     setup_logging(log_level)
-    
+
     # Handle case where no command is provided
     if not args.command:
         parser.print_help()
         sys.exit(1)
-    
+
     # Handle sample command (doesn't need template engine)
-    if args.command == 'sample':
+    if args.command == "sample":
         create_sample_data(args.document_type, args.output_path)
         return
-    
+
     # Initialize template engine
     try:
         engine = TemplateEngine(
-            config_path=args.config,
-            templates_path=args.templates_path
+            config_path=args.config, templates_path=args.templates_path
         )
     except Exception as e:
         print(f"Error initializing template engine: {e}")
         sys.exit(1)
-    
+
     # Execute commands
-    if args.command == 'list':
+    if args.command == "list":
         list_templates(engine, args.type)
-    
-    elif args.command == 'info':
+
+    elif args.command == "info":
         show_template_info(engine, args.document_type, args.template_name)
-    
-    elif args.command == 'generate':
+
+    elif args.command == "generate":
         generate_document(
-            engine, 
-            args.document_type, 
+            engine,
+            args.document_type,
             args.template_name,
             args.data_file,
             args.output_path,
-            args.format
+            args.format,
         )
 
-if __name__ == '__main__':
-    main() 
+
+if __name__ == "__main__":
+    main()
