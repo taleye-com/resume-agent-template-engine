@@ -62,10 +62,6 @@ class ClassicResumeTemplate(TemplateInterface):
             "email",
             "phone",
             "location",
-            "website",
-            "website_display",
-            "linkedin",
-            "linkedin_display",
         ]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
@@ -86,10 +82,37 @@ class ClassicResumeTemplate(TemplateInterface):
             return {k: self.replace_special_chars(v) for k, v in data.items()}
         return data
 
-    def generate_personal_info(self):
-        """Generate the Personal Information section."""
-        # This is handled in the LaTeX template header section
-        return ""
+    def generate_personal_info(self) -> str:
+        """
+        Generate the header block dynamically from self.data['personalInfo'].
+        """
+        info = self.data["personalInfo"]
+        # You want the exact same formatting you had before, but built from code
+        header_lines = []
+        header_lines.append(r"\begin{header}")
+        header_lines.append(r"    \fontsize{25pt}{25pt}\selectfont " + info["name"])
+        header_lines.append(r"    \vspace{2pt}")
+        header_lines.append(r"    \normalsize")
+        # Build the contact line pieces
+        parts = []
+        parts.append(r"\mbox{ " + info["location"] + r" }")
+        parts.append(r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}")
+        parts.append(r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}")
+        if info["website"] and info["website_display"]:
+            parts.append(r"\mbox{\href{" + info["website"] + r"}{" + info["website_display"] + r"}}")
+        if info["linkedin"] and info["linkedin_display"]:
+            parts.append(r"\mbox{\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}}")
+        if info["github"] and info["github_display"]:
+            parts.append(r"\mbox{\href{" + info["github"] + r"}{" + info["github_display"] + r"}}")
+        if info["twitter"] and info["twitter_display"]:
+            parts.append(r"\mbox{\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}}")
+        if info["x"] and info["x_display"]:
+            parts.append(r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}")
+        # Join them with the \AND separators exactly as before
+        contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
+        header_lines.append(r"    " + contact_line)
+        header_lines.append(r"\end{header}")
+        return "\n".join(header_lines)
 
     def generate_professional_summary(self):
         """Generate the Professional Summary section."""
@@ -180,20 +203,9 @@ class ClassicResumeTemplate(TemplateInterface):
         """Generate the final LaTeX resume by replacing placeholders."""
         info = self.data["personalInfo"]
 
-        # Header replacements
-        header_replacements = {
-            "{{name}}": info["name"],
-            "{{location}}": info["location"],
-            "{{email}}": info["email"],
-            "{{phone}}": info["phone"],
-            "{{website}}": info["website"],
-            "{{website_display}}": info["website_display"],
-            "{{linkedin}}": info["linkedin"],
-            "{{linkedin_display}}": info["linkedin_display"],
-        }
-
         # Section replacements
         section_replacements = {
+            "{{personal_info}}": self.generate_personal_info(),
             "{{professional_summary}}": self.generate_professional_summary(),
             "{{education}}": self.generate_education(),
             "{{experience}}": self.generate_experience(),
@@ -205,7 +217,7 @@ class ClassicResumeTemplate(TemplateInterface):
         }
 
         # Combine all replacements
-        all_replacements = {**header_replacements, **section_replacements}
+        all_replacements = {**section_replacements}
 
         resume = self.template
         for ph, content in all_replacements.items():

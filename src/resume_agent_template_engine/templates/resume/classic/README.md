@@ -30,11 +30,17 @@ python -m resume_agent_template_engine.cli generate resume classic data.yaml out
     - `email`: The email of the candidate.
     - `phone`: The phone of the candidate.
     - `location`: The location of the candidate.
-    - `website`: The website of the candidate.
-    - `linkedin`: The linkedin of the candidate.
-    - `website_display`: The display name of the candidate's website.
-    - `linkedin_display`: The display name of the candidate's linkedin.
-    - `github`: The github of the candidate.
+    - optional:
+        - `website`: The website of the candidate.
+        - `website_display`: The display name of the candidate's website.
+        - `linkedin`: The linkedin of the candidate.
+        - `linkedin_display`: The display name of the candidate's linkedin.
+        - `github`: The github of the candidate.
+        - `github_display`: The display name of the candidate's github.
+        - `twitter`: The twitter of the candidate.
+        - `twitter_display`: The display name of the candidate's twitter.
+        - `x`: The x of the candidate.
+        - `x_display`: The display name of the candidate's x.
 - `professionalSummary`: The professional summary of the candidate.
     - `summary`: The summary of the professional summary.
 - `experience`: The experience of the candidate.

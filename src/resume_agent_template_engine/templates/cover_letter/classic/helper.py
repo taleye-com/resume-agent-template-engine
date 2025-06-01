@@ -89,6 +89,39 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         if isinstance(data, dict):
             return {k: self.replace_special_chars(v) for k, v in data.items()}
         return data
+    
+    def generate_personal_info(self) -> str:
+        """
+        Generate the header block dynamically from self.data['personalInfo'].
+        """
+        info = self.data["personalInfo"]
+        # You want the exact same formatting you had before, but built from code
+        header_lines = []
+        header_lines.append(r"\begin{header}")
+        header_lines.append(r"    \fontsize{25pt}{25pt}\selectfont " + info["name"])
+        header_lines.append(r"    \vspace{2pt}")
+        header_lines.append(r"    \normalsize")
+        # Build the contact line pieces
+        parts = []
+        parts.append(r"\mbox{ " + info["location"] + r" }")
+        parts.append(r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}")
+        parts.append(r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}")
+        if info["website"] and info["website_display"]:
+            parts.append(r"\mbox{\href{" + info["website"] + r"}{" + info["website_display"] + r"}}")
+        if info["linkedin"] and info["linkedin_display"]:
+            parts.append(r"\mbox{\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}}")
+        if info["github"] and info["github_display"]:
+            parts.append(r"\mbox{\href{" + info["github"] + r"}{" + info["github_display"] + r"}}")
+        if info["twitter"] and info["twitter_display"]:
+            parts.append(r"\mbox{\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}}")
+        if info["x"] and info["x_display"]:
+            parts.append(r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}")
+        # Join them with the \AND separators exactly as before
+        contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
+        header_lines.append(r"    " + contact_line)
+        header_lines.append(r"\end{header}")
+        return "\n".join(header_lines)
+
 
     def generate_recipient_address(self):
         """Format recipient information with LaTeX line breaks."""
@@ -111,17 +144,18 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         info = self.data["personalInfo"]
 
         # Header replacements
-        header_replacements = {
-            "{{name}}": info["name"],
-            "{{location}}": info["location"],
-            "{{email}}": info["email"],
-            "{{phone}}": info["phone"],
-            "{{website}}": info["website"],
-            "{{website_display}}": info["website_display"],
-        }
+        # header_replacements = {
+        #     "{{name}}": info["name"],
+        #     "{{location}}": info["location"],
+        #     "{{email}}": info["email"],
+        #     "{{phone}}": info["phone"],
+        #     "{{website}}": info["website"],
+        #     "{{website_display}}": info["website_display"],
+        # }
 
         # Content replacements
         content_replacements = {
+            "{{personal_info}}": self.generate_personal_info(),
             "{{recipient_address}}": self.generate_recipient_address(),
             "{{date}}": self.data["date"],
             "{{salutation}}": self.data["salutation"],
@@ -130,7 +164,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         }
 
         # Combine all replacements
-        all_replacements = {**header_replacements, **content_replacements}
+        all_replacements = {**content_replacements}
 
         cover_letter = self.template
         for placeholder, content in all_replacements.items():
