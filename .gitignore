@@ -53,3 +53,6 @@ Thumbs.db
 stress_test_metrics_*
 
 sample_data*
+
+# Versions
+.versions/
