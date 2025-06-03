@@ -82,30 +82,60 @@ class ClassicResumeTemplate(TemplateInterface):
         header_lines.append(r"    \normalsize")
         # Build the contact line pieces
         parts = []
-        
+
         # Only add location if it exists
         if info.get("location"):
             parts.append(r"\mbox{ " + info["location"] + r" }")
-            
+
         # Email is required, so always add it
-        parts.append(r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}")
-        
+        parts.append(
+            r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}"
+        )
+
         # Only add phone if it exists
         if info.get("phone"):
-            parts.append(r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}")
-            
+            parts.append(
+                r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}"
+            )
+
         # Add optional social links only if both URL and display text exist
         if info.get("website") and info.get("website_display"):
-            parts.append(r"\mbox{\href{" + info["website"] + r"}{" + info["website_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["website"]
+                + r"}{"
+                + info["website_display"]
+                + r"}}"
+            )
         if info.get("linkedin") and info.get("linkedin_display"):
-            parts.append(r"\mbox{\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["linkedin"]
+                + r"}{"
+                + info["linkedin_display"]
+                + r"}}"
+            )
         if info.get("github") and info.get("github_display"):
-            parts.append(r"\mbox{\href{" + info["github"] + r"}{" + info["github_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["github"]
+                + r"}{"
+                + info["github_display"]
+                + r"}}"
+            )
         if info.get("twitter") and info.get("twitter_display"):
-            parts.append(r"\mbox{\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["twitter"]
+                + r"}{"
+                + info["twitter_display"]
+                + r"}}"
+            )
         if info.get("x") and info.get("x_display"):
-            parts.append(r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}")
-            
+            parts.append(
+                r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}"
+            )
+
         # Join them with the \AND separators exactly as before
         contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
         header_lines.append(r"    " + contact_line)
@@ -148,7 +178,7 @@ class ClassicResumeTemplate(TemplateInterface):
 
             # Use achievements if available, otherwise use details
             achievements = exp.get("achievements", exp.get("details", []))
-            
+
             entry = (
                 f"\\textbf{{{exp.get('title', 'Position')}}}, {exp.get('company', 'Company')} \\hfill {date_range}\n"
                 "\\begin{highlights}\n"
@@ -170,20 +200,20 @@ class ClassicResumeTemplate(TemplateInterface):
                 desc_points = ", ".join(description)
             else:
                 desc_points = description
-                
+
             # Handle different field names for technologies/tools
             tools = proj.get("tools", proj.get("technologies", []))
             achievements = proj.get("achievements", [])
 
             entry_lines = [
                 f"\\textbf{{{proj.get('name', 'Project')}}} - \\textit{{{desc_points}}}",
-                "\\begin{highlights}"
+                "\\begin{highlights}",
             ]
-            
+
             # Add tools/technologies if available
             if tools:
                 entry_lines.append(f"\\item \\textbf{{Tools:}} {', '.join(tools)}")
-                
+
             # Add achievements if available
             if achievements:
                 entry_lines.append("\\item \\textbf{Achievements:}")
@@ -191,9 +221,9 @@ class ClassicResumeTemplate(TemplateInterface):
                 for ach in achievements:
                     entry_lines.append(f"\\item {ach}")
                 entry_lines.append("    \\end{itemize}")
-                
+
             entry_lines.append("\\end{highlights}")
-            
+
             entry = "\n".join(entry_lines)
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
         return "\n".join(sections)
@@ -228,11 +258,13 @@ class ClassicResumeTemplate(TemplateInterface):
         skills_data = self.data.get("technologiesAndSkills") or self.data.get("skills")
         if not skills_data:
             return ""
-            
+
         sections = []
-        
+
         # If it's a simple array of skills, treat them as general skills
-        if isinstance(skills_data, list) and all(isinstance(skill, str) for skill in skills_data):
+        if isinstance(skills_data, list) and all(
+            isinstance(skill, str) for skill in skills_data
+        ):
             entry = f"\\textbf{{Skills}}: {', '.join(skills_data)}"
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
         else:
@@ -248,30 +280,58 @@ class ClassicResumeTemplate(TemplateInterface):
 
         # Generate content for each section and include header if content exists
         personal_info = self.generate_personal_info()
-        
+
         professional_summary_content = self.generate_professional_summary()
-        professional_summary = ("\\section{Professional Summary}\n" + professional_summary_content) if professional_summary_content else ""
-        
+        professional_summary = (
+            ("\\section{Professional Summary}\n" + professional_summary_content)
+            if professional_summary_content
+            else ""
+        )
+
         education_content = self.generate_education()
-        education = ("\\section{Education}\n" + education_content) if education_content else ""
-        
+        education = (
+            ("\\section{Education}\n" + education_content) if education_content else ""
+        )
+
         experience_content = self.generate_experience()
-        experience = ("\\section{Experience}\n" + experience_content) if experience_content else ""
-        
+        experience = (
+            ("\\section{Experience}\n" + experience_content)
+            if experience_content
+            else ""
+        )
+
         projects_content = self.generate_projects()
-        projects = ("\\section{Projects}\n" + projects_content) if projects_content else ""
-        
+        projects = (
+            ("\\section{Projects}\n" + projects_content) if projects_content else ""
+        )
+
         articles_content = self.generate_articles_and_publications()
-        articles_and_publications = ("\\section{Articles \\& Publications}\n" + articles_content) if articles_content else ""
-        
+        articles_and_publications = (
+            ("\\section{Articles \\& Publications}\n" + articles_content)
+            if articles_content
+            else ""
+        )
+
         achievements_content = self.generate_achievements()
-        achievements = ("\\section{Achievements}\n" + achievements_content) if achievements_content else ""
-        
+        achievements = (
+            ("\\section{Achievements}\n" + achievements_content)
+            if achievements_content
+            else ""
+        )
+
         certifications_content = self.generate_certifications()
-        certifications = ("\\section{Certifications}\n" + certifications_content) if certifications_content else ""
-        
+        certifications = (
+            ("\\section{Certifications}\n" + certifications_content)
+            if certifications_content
+            else ""
+        )
+
         skills_content = self.generate_technologies_and_skills()
-        technologies_and_skills = ("\\section{Technologies \\& Skills}\n" + skills_content) if skills_content else ""
+        technologies_and_skills = (
+            ("\\section{Technologies \\& Skills}\n" + skills_content)
+            if skills_content
+            else ""
+        )
 
         # Section replacements
         section_replacements = {
@@ -324,11 +384,11 @@ class ClassicResumeTemplate(TemplateInterface):
         tex_paths = [
             "/Library/TeX/texbin",
             "/usr/local/texlive/2025basic/bin/universal-darwin",
-            "/usr/local/texlive/2024/bin/universal-darwin", 
+            "/usr/local/texlive/2024/bin/universal-darwin",
             "/usr/local/bin",
-            "/opt/homebrew/bin"
+            "/opt/homebrew/bin",
         ]
-        
+
         current_path = env.get("PATH", "")
         for tex_path in tex_paths:
             if os.path.exists(tex_path) and tex_path not in current_path:
@@ -373,7 +433,7 @@ class ClassicResumeTemplate(TemplateInterface):
                 raise RuntimeError(
                     "pdflatex not found. Please install BasicTeX or MacTeX:\n"
                     "brew install --cask basictex\n"
-                    "Then restart your terminal or run: eval \"$(/usr/libexec/path_helper)\""
+                    'Then restart your terminal or run: eval "$(/usr/libexec/path_helper)"'
                 ) from e
 
             pdf_path = os.path.join(tmpdir, "temp.pdf")

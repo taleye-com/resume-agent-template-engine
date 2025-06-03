@@ -15,6 +15,12 @@ from pathlib import Path
 from typing import Dict, Any
 import logging
 
+# Fix import path issue - add src directory to Python path
+current_file = Path(__file__).resolve()
+src_dir = current_file.parent.parent  # Go up two levels from cli.py to src/
+project_root = src_dir.parent  # Go up one more level to project root
+sys.path.insert(0, str(src_dir))
+
 from resume_agent_template_engine.core.template_engine import (
     TemplateEngine,
     DocumentType,
@@ -281,25 +287,33 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Easy way - run from project root
+  python cli.py list
+  python cli.py generate resume classic resume_data.json resume.pdf
+
+  # Alternative ways to run:
+  python src/resume_agent_template_engine/cli.py list
+  PYTHONPATH=src python -m resume_agent_template_engine.cli list
+
   # List all available templates
-  python -m resume_agent_template_engine.cli list
+  python cli.py list
 
   # List templates for a specific document type
-  python -m resume_agent_template_engine.cli list --type resume
+  python cli.py list --type resume
 
   # Show information about a template
-  python -m resume_agent_template_engine.cli info resume classic
+  python cli.py info resume classic
 
   # Generate sample data files (JSON and YAML supported)
-  python -m resume_agent_template_engine.cli sample resume resume_data.json
-  python -m resume_agent_template_engine.cli sample resume resume_data.yaml
+  python cli.py sample resume resume_data.json
+  python cli.py sample resume resume_data.yaml
 
   # Generate a PDF resume (supports both JSON and YAML input)
-  python -m resume_agent_template_engine.cli generate resume classic resume_data.json resume.pdf
-  python -m resume_agent_template_engine.cli generate resume classic resume_data.yaml resume.pdf
+  python cli.py generate resume classic resume_data.json resume.pdf
+  python cli.py generate resume classic resume_data.yaml resume.pdf
 
   # Generate LaTeX source
-  python -m resume_agent_template_engine.cli generate cover_letter classic cover_letter_data.yaml cover_letter.tex --format latex
+  python cli.py generate cover_letter classic cover_letter_data.yaml cover_letter.tex --format latex
         """,
     )
 

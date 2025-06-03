@@ -48,3 +48,8 @@ htmlcov/
 # OS specific
 .DS_Store
 Thumbs.db 
+
+# stress_test_metrics_high_volume_concurrent_medium_20250604_010215
+stress_test_metrics_*
+
+sample_data*

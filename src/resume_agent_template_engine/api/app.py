@@ -79,40 +79,30 @@ def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
 
 def validate_date_format(date_str: str) -> bool:
     """Validate date format (YYYY-MM or YYYY-MM-DD)"""
-    try:
-        if len(date_str) == 7:  # YYYY-MM
-            datetime.strptime(date_str, "%Y-%m")
-        elif len(date_str) == 10:  # YYYY-MM-DD
-            datetime.strptime(date_str, "%Y-%m-%d")
-        else:
-            return False
-        return True
-    except ValueError:
-        return False
+    from ..core.base_validator import DataValidator
+
+    validator = DataValidator()
+    return validator.validate_date_format(date_str, "date")
 
 
 def validate_resume_data(data: Dict[str, Any]):
     """Validate resume data structure and content"""
-    if "personalInfo" not in data:
-        raise ValueError("Personal information is required")
+    from ..core.base_validator import DataValidator, ValidationError
 
-    personal_info = PersonalInfo(**data["personalInfo"])
+    validator = DataValidator()
+    issues = validator.validate(data, "resume")
 
-    # Validate dates in experience
-    if "experience" in data and isinstance(data["experience"], list):
-        for exp in data["experience"]:
-            if "startDate" in exp and not validate_date_format(exp["startDate"]):
-                raise ValueError(
-                    f"Invalid start date format: {exp['startDate']}. Use YYYY-MM or YYYY-MM-DD"
-                )
-            if (
-                "endDate" in exp
-                and exp["endDate"] != "Present"
-                and not validate_date_format(exp["endDate"])
-            ):
-                raise ValueError(
-                    f"Invalid end date format: {exp['endDate']}. Use YYYY-MM or YYYY-MM-DD"
-                )
+    # Convert to old-style errors for backward compatibility
+    errors = [str(issue) for issue in issues if issue.severity.value == "error"]
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    # Additional validation using Pydantic for personal info
+    if "personalInfo" in data:
+        try:
+            personal_info = PersonalInfo(**data["personalInfo"])
+        except Exception as e:
+            raise ValueError(f"Personal info validation failed: {str(e)}")
 
 
 @app.post("/generate")
@@ -137,18 +127,21 @@ async def generate_document(
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
 
+        # Convert enum to string for validation
+        document_type_str = request.document_type.value
+
         # Validate document type
-        if request.document_type not in available_templates:
+        if document_type_str not in available_templates:
             raise HTTPException(
                 status_code=404,
-                detail=f"Document type '{request.document_type}' not supported. Available types: {list(available_templates.keys())}",
+                detail=f"Document type '{document_type_str}' not supported. Available types: {list(available_templates.keys())}",
             )
 
         # Validate template exists
-        if request.template not in available_templates[request.document_type]:
+        if request.template not in available_templates[document_type_str]:
             raise HTTPException(
                 status_code=404,
-                detail=f"Template '{request.template}' not found for {request.document_type}. Available templates: {available_templates[request.document_type]}",
+                detail=f"Template '{request.template}' not found for {document_type_str}. Available templates: {available_templates[document_type_str]}",
             )
 
         # Validate format (currently only PDF is supported)
@@ -222,18 +215,21 @@ async def generate_document_from_yaml(
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
 
+        # Convert enum to string for validation
+        document_type_str = request.document_type.value
+
         # Validate document type
-        if request.document_type not in available_templates:
+        if document_type_str not in available_templates:
             raise HTTPException(
                 status_code=404,
-                detail=f"Document type '{request.document_type}' not supported. Available types: {list(available_templates.keys())}",
+                detail=f"Document type '{document_type_str}' not supported. Available types: {list(available_templates.keys())}",
             )
 
         # Validate template exists
-        if request.template not in available_templates[request.document_type]:
+        if request.template not in available_templates[document_type_str]:
             raise HTTPException(
                 status_code=404,
-                detail=f"Template '{request.template}' not found for {request.document_type}. Available templates: {available_templates[request.document_type]}",
+                detail=f"Template '{request.template}' not found for {document_type_str}. Available templates: {available_templates[document_type_str]}",
             )
 
         # Validate format (currently only PDF is supported)

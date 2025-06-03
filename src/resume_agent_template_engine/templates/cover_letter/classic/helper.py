@@ -89,7 +89,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         if isinstance(data, dict):
             return {k: self.replace_special_chars(v) for k, v in data.items()}
         return data
-    
+
     def generate_personal_info(self) -> str:
         """
         Generate the header block dynamically from self.data['personalInfo'].
@@ -104,24 +104,53 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         # Build the contact line pieces
         parts = []
         parts.append(r"\mbox{ " + info["location"] + r" }")
-        parts.append(r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}")
-        parts.append(r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}")
+        parts.append(
+            r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}"
+        )
+        parts.append(
+            r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}"
+        )
         if info["website"] and info["website_display"]:
-            parts.append(r"\mbox{\href{" + info["website"] + r"}{" + info["website_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["website"]
+                + r"}{"
+                + info["website_display"]
+                + r"}}"
+            )
         if info["linkedin"] and info["linkedin_display"]:
-            parts.append(r"\mbox{\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["linkedin"]
+                + r"}{"
+                + info["linkedin_display"]
+                + r"}}"
+            )
         if info["github"] and info["github_display"]:
-            parts.append(r"\mbox{\href{" + info["github"] + r"}{" + info["github_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["github"]
+                + r"}{"
+                + info["github_display"]
+                + r"}}"
+            )
         if info["twitter"] and info["twitter_display"]:
-            parts.append(r"\mbox{\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["twitter"]
+                + r"}{"
+                + info["twitter_display"]
+                + r"}}"
+            )
         if info["x"] and info["x_display"]:
-            parts.append(r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}"
+            )
         # Join them with the \AND separators exactly as before
         contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
         header_lines.append(r"    " + contact_line)
         header_lines.append(r"\end{header}")
         return "\n".join(header_lines)
-
 
     def generate_recipient_address(self):
         """Format recipient information with LaTeX line breaks."""

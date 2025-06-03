@@ -1,0 +1,16 @@
+name: Resume Macros
+description: Standard macros for resume templates
+macros:
+- name: resumeSection
+  macro_type: command
+  definition: \newcommand{\resumeSection}[1]{\section*{#1}\vspace{-0.3em}\hrule\vspace{0.5em}}
+  parameters: 1
+  description: Create a resume section with underline
+  category: resume
+- name: experienceEntry
+  macro_type: command
+  definition: '\newcommand{\experienceEntry}[4]{\noindent\textbf{#1} \hfill \textit{#2}
+    \\ \textit{#3} \\ #4 \vspace{0.5em}}'
+  parameters: 4
+  description: Format experience entry with company, dates, position, description
+  category: resume

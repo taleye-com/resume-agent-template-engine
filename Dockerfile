@@ -37,7 +37,7 @@ EXPOSE 8501
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/src
 
 # Run the application
-CMD ["python", "run.py"] 
+CMD ["python", "run.py", "--api"] 

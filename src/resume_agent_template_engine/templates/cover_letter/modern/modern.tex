@@ -1,0 +1,105 @@
+\documentclass[11pt,letterpaper]{article}
+
+% Packages for modern design
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+% Define modern color scheme
+\definecolor{primarycolor}{RGB}{41, 128, 185}
+\definecolor{secondarycolor}{RGB}{52, 73, 94}
+\definecolor{accentcolor}{RGB}{155, 89, 182}
+
+% Hyperlink setup with modern colors
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primarycolor,
+    urlcolor=primarycolor,
+    citecolor=secondarycolor,
+    filecolor=primarycolor
+}
+
+% Remove default page numbering
+\pagestyle{empty}
+
+% Modern typography settings
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.2em}
+\renewcommand{\baselinestretch}{1.15}
+
+% Custom commands for consistent formatting
+\newcommand{\sectionheader}[1]{%
+    \textcolor{primarycolor}{\textbf{\large #1}}%
+    \vspace{0.5em}%
+}
+
+\newcommand{\contactline}[1]{%
+    \textcolor{secondarycolor}{#1}%
+}
+
+\newcommand{\companyname}[1]{%
+    \textcolor{primarycolor}{\textbf{#1}}%
+}
+
+\newcommand{\highlight}[1]{%
+    \textcolor{accentcolor}{\textbf{#1}}%
+}
+
+% Professional header styling
+\newcommand{\professionalheader}[1]{%
+    \begin{center}%
+        \textcolor{primarycolor}{\textbf{\LARGE #1}}%
+    \end{center}%
+}
+
+\begin{document}
+
+% Modern Header with accent line
+{{ header }}
+
+\vspace{0.8em}
+
+% Decorative line
+\textcolor{primarycolor}{\rule{\textwidth}{1.5pt}}
+
+\vspace{1em}
+
+% Date with modern styling
+{{ date }}
+
+\vspace{1em}
+
+% Recipient information
+{{ recipient }}
+
+\vspace{1em}
+
+% Salutation
+{{ salutation }}
+
+\vspace{0.8em}
+
+% Body content with proper spacing
+{{ body }}
+
+\vspace{0.8em}
+
+% Closing paragraph
+{{ closing }}
+
+% Signature block with modern styling
+{{ signature }}
+
+\vspace{1em}
+
+% Optional footer line
+\textcolor{primarycolor}{\rule{\textwidth}{0.5pt}}
+
+\end{document} 

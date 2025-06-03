@@ -189,13 +189,23 @@ class ClassicResumeTemplate:
         assert callable(manager._discover_templates)
 
     def test_discover_templates_no_directory(self):
-        """Test _discover_templates with non-existent directory"""
+        """Test _discover_templates with empty directory (auto-created by TemplateEngine)"""
+        import tempfile
+        import uuid
+
+        # Use a guaranteed non-existent directory path
+        nonexistent_dir = os.path.join(
+            tempfile.gettempdir(), f"truly_nonexistent_{uuid.uuid4()}"
+        )
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            manager = TemplateManager("nonexistent_directory")
+            manager = TemplateManager(nonexistent_dir)
 
-        with pytest.raises(FileNotFoundError, match="Templates directory not found"):
-            manager._discover_templates()
+        # The TemplateEngine now auto-creates the directory, so _discover_templates should return empty results
+        templates = manager._discover_templates()
+        assert isinstance(templates, dict)
+        assert len(templates) == 0 or all(len(v) == 0 for v in templates.values())
 
     def test_discover_templates_with_valid_structure(self, tmp_path):
         """Test _discover_templates with valid template structure"""

@@ -77,7 +77,9 @@ def main():
 
         # Show example JSON structure
         with st.expander("📋 View Example JSON Structure", expanded=False):
-            st.info("📝 Note: Only personalInfo with name and email are required. All other sections are optional!")
+            st.info(
+                "📝 Note: Only personalInfo with name and email are required. All other sections are optional!"
+            )
             example_json = {
                 "personalInfo": {
                     "name": "John Doe",  # Required
@@ -113,7 +115,14 @@ def main():
                         "details": ["GPA: 3.8/4.0", "Dean's List"],
                     }
                 ],
-                "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker"],  # Optional section
+                "skills": [
+                    "Python",
+                    "JavaScript",
+                    "React",
+                    "Node.js",
+                    "AWS",
+                    "Docker",
+                ],  # Optional section
                 "projects": [  # Optional section
                     {
                         "name": "E-commerce Platform",
@@ -138,7 +147,9 @@ def main():
 
         # Show example YAML structure
         with st.expander("📋 View Example YAML Structure", expanded=False):
-            st.info("📝 Note: Only personalInfo with name and email are required. All other sections are optional!")
+            st.info(
+                "📝 Note: Only personalInfo with name and email are required. All other sections are optional!"
+            )
             example_yaml = """personalInfo:
   name: John Doe  # Required
   email: john.doe@email.com  # Required
@@ -201,9 +212,11 @@ projects:
     # Determine which input has data and set format accordingly
     json_has_data = json_input.strip()
     yaml_has_data = yaml_input.strip()
-    
+
     if json_has_data and yaml_has_data:
-        st.warning("⚠️ Both JSON and YAML inputs contain data. Please use only one format at a time. JSON will be prioritized.")
+        st.warning(
+            "⚠️ Both JSON and YAML inputs contain data. Please use only one format at a time. JSON will be prioritized."
+        )
         input_format = "JSON"
         data_input = json_input
     elif json_has_data:
@@ -227,9 +240,7 @@ projects:
 
     if generate_button:
         if not data_input.strip():
-            st.error(
-                "Please enter JSON or YAML data before generating the document."
-            )
+            st.error("Please enter JSON or YAML data before generating the document.")
             return
 
         try:

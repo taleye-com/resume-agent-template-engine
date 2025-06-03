@@ -2,9 +2,12 @@ import sys
 import os
 import subprocess
 import argparse
+from pathlib import Path
 
 # Add src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+current_dir = Path(__file__).parent.resolve()
+src_dir = current_dir / "src"
+sys.path.insert(0, str(src_dir))
 
 from resume_agent_template_engine.api.app import app
 import uvicorn

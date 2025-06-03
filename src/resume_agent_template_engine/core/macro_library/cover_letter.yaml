@@ -1,0 +1,15 @@
+name: Cover Letter Macros
+description: Standard macros for cover letter templates
+macros:
+- name: letterHeader
+  macro_type: command
+  definition: \newcommand{\letterHeader}[3]{\begin{flushright}#1\\#2\\#3\end{flushright}\vspace{1em}}
+  parameters: 3
+  description: Format letter header with name, address, date
+  category: cover_letter
+- name: salutation
+  macro_type: command
+  definition: '\newcommand{\salutation}[1]{Dear #1,\vspace{1em}}'
+  parameters: 1
+  description: Format salutation
+  category: cover_letter
