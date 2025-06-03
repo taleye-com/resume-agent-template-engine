@@ -80,6 +80,3 @@ docker-compose*.yml
 .gitlab-ci.yml
 .travis.yml
 azure-pipelines.yml
-
-# Requirements development file
-requirements-dev.txt 

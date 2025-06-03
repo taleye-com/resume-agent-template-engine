@@ -27,11 +27,20 @@ python -m resume_agent_template_engine.cli generate cover_letter classic data.ya
 
 - `personalInfo`: The personal information of the candidate.
     - `name`: The name of the candidate.
-    - `location`: The location of the candidate.
     - `email`: The email of the candidate.
     - `phone`: The phone of the candidate.
-    - `website`: The website of the candidate.
-    - `website_display`: The display name of the candidate's website.
+    - `location`: The location of the candidate.
+    - optional:
+        - `website`: The website of the candidate.
+        - `website_display`: The display name of the candidate's website.
+        - `linkedin`: The linkedin of the candidate.
+        - `linkedin_display`: The display name of the candidate's linkedin.
+        - `github`: The github of the candidate.
+        - `github_display`: The display name of the candidate's github.
+        - `twitter`: The twitter of the candidate.
+        - `twitter_display`: The display name of the candidate's twitter.
+        - `x`: The x of the candidate.
+        - `x_display`: The display name of the candidate's x.
 - `coverLetter`: The cover letter information of the candidate.
     - `recipient`: The recipient of the cover letter.
         - `name`: The name of the recipient.
