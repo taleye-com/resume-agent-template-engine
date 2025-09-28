@@ -13,6 +13,8 @@ project_root = os.path.abspath(os.path.join(src_dir, ".."))
 sys.path.insert(0, src_dir)
 
 from resume_agent_template_engine.core.template_engine import TemplateEngine
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import ValidationException
 
 # Configure Streamlit page
 st.set_page_config(
@@ -27,8 +29,18 @@ def parse_input_data(input_text: str, input_format: str) -> Dict[str, Any]:
             return yaml.safe_load(input_text)
         else:
             return json.loads(input_text)
-    except (json.JSONDecodeError, yaml.YAMLError) as e:
-        raise ValueError(f"Invalid {input_format} format: {str(e)}")
+    except json.JSONDecodeError as e:
+        raise ValidationException(
+            error_code=ErrorCode.VAL013,
+            field_path="input_data",
+            context={"details": str(e)}
+        )
+    except yaml.YAMLError as e:
+        raise ValidationException(
+            error_code=ErrorCode.VAL014,
+            field_path="input_data",
+            context={"details": str(e)}
+        )
 
 
 def main():

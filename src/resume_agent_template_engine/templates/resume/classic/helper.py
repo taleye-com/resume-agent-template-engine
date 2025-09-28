@@ -7,6 +7,16 @@ from resume_agent_template_engine.core.template_engine import (
     TemplateInterface,
     DocumentType,
 )
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import (
+    FileSystemException,
+    FileNotFoundException,
+    ValidationException,
+    TemplateRenderingException,
+    LaTeXCompilationException,
+    PDFGenerationException,
+    DependencyException
+)
 
 
 class ClassicResumeTemplate(TemplateInterface):
@@ -34,16 +44,33 @@ class ClassicResumeTemplate(TemplateInterface):
         try:
             with open(self.template_path, "r", encoding="utf-8") as f:
                 self.template = f.read()
+        except FileNotFoundError as e:
+            raise FileNotFoundException(
+                file_path=self.template_path,
+                context={"details": str(e)}
+            ) from e
+        except PermissionError as e:
+            raise FileSystemException(
+                error_code=ErrorCode.FIL002,
+                file_path=self.template_path,
+                context={"details": str(e)}
+            ) from e
         except Exception as e:
-            raise IOError(
-                f"Error reading template file {self.template_path}: {e}"
+            raise FileSystemException(
+                error_code=ErrorCode.FIL006,
+                file_path=self.template_path,
+                context={"details": f"Error reading template file: {e}"}
             ) from e
 
     def validate_data(self):
         """Ensure only essential required sections are present in the JSON data."""
         # Only validate the truly essential sections
         if "personalInfo" not in self.data:
-            raise ValueError("Missing required section: personalInfo")
+            raise ValidationException(
+                error_code=ErrorCode.VAL001,
+                field_path="personalInfo",
+                context={"section": "resume data"}
+            )
 
         # Validate only the most essential personal info fields
         required_personal_info = [
@@ -52,7 +79,11 @@ class ClassicResumeTemplate(TemplateInterface):
         ]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
-                raise ValueError(f"Missing required personal info field: {field}")
+                raise ValidationException(
+                    error_code=ErrorCode.VAL001,
+                    field_path=f"personalInfo.{field}",
+                    context={"section": "personalInfo"}
+                )
 
     def replace_special_chars(self, data):
         """Recursively replace special LaTeX characters in strings."""
@@ -294,7 +325,11 @@ class ClassicResumeTemplate(TemplateInterface):
             resume = resume.replace(ph, content)
 
         if re.search(r"{{.*?}}", resume):
-            raise ValueError("Unreplaced placeholders detected")
+            unreplaced_matches = re.findall(r"{{(.*?)}}", resume)
+            raise TemplateRenderingException(
+                template_name="classic",
+                details=f"Unreplaced placeholders detected: {', '.join(unreplaced_matches)}"
+            )
 
         return resume
 
@@ -366,20 +401,28 @@ class ClassicResumeTemplate(TemplateInterface):
                     env=env,
                 )
             except subprocess.CalledProcessError as e:
-                raise RuntimeError(
-                    "PDF compilation failed. Ensure pdflatex is installed."
+                raise LaTeXCompilationException(
+                    details="PDF compilation failed. Ensure pdflatex is installed.",
+                    template_name="classic",
+                    context={"return_code": e.returncode}
                 ) from e
             except FileNotFoundError as e:
-                raise RuntimeError(
-                    "pdflatex not found. Please install BasicTeX or MacTeX:\n"
-                    "brew install --cask basictex\n"
-                    "Then restart your terminal or run: eval \"$(/usr/libexec/path_helper)\""
+                raise DependencyException(
+                    dependency="pdflatex",
+                    context={
+                        "details": "pdflatex not found. Please install BasicTeX or MacTeX:\n"
+                                  "brew install --cask basictex\n"
+                                  "Then restart your terminal or run: eval \"$(/usr/libexec/path_helper)\""
+                    }
                 ) from e
 
             pdf_path = os.path.join(tmpdir, "temp.pdf")
             if os.path.exists(pdf_path):
                 os.replace(pdf_path, output_path)
             else:
-                raise FileNotFoundError("PDF output not generated")
+                raise PDFGenerationException(
+                    details="PDF output not generated",
+                    template_name="classic"
+                )
 
         return output_path

@@ -7,6 +7,14 @@ import importlib.util
 import logging
 from enum import Enum
 
+from .errors import ErrorCode
+from .exceptions import (
+    TemplateNotFoundException,
+    TemplateCompilationException,
+    TemplateRenderingException,
+    InternalServerException
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -186,11 +194,17 @@ class TemplateRegistry:
             return self._template_cache[cache_key]
 
         if document_type not in self._available_templates:
-            raise ValueError(f"Document type '{document_type}' not found")
+            raise TemplateNotFoundException(
+                template_name="",
+                document_type=document_type,
+                available_templates=list(self._available_templates.keys())
+            )
 
         if template_name not in self._available_templates[document_type]:
-            raise ValueError(
-                f"Template '{template_name}' not found for {document_type}"
+            raise TemplateNotFoundException(
+                template_name=template_name,
+                document_type=document_type,
+                available_templates=self._available_templates[document_type]
             )
 
         # Load the template class
@@ -238,7 +252,10 @@ class TemplateRegistry:
         if template_classes:
             return getattr(module, template_classes[0])
 
-        raise ValueError(f"No template class found in {module.__name__}")
+        raise TemplateCompilationException(
+            template_name=template_name,
+            details=f"No template class found in {module.__name__}"
+        )
 
 
 class TemplateEngine:
@@ -318,8 +335,11 @@ class TemplateEngine:
             Template instance
         """
         if not self.validate_template(document_type, template_name):
-            raise ValueError(
-                f"Template '{template_name}' not found for document type '{document_type}'"
+            available = self.get_available_templates(document_type)
+            raise TemplateNotFoundException(
+                template_name=template_name,
+                document_type=document_type,
+                available_templates=available
             )
 
         # Load template class
@@ -359,7 +379,10 @@ class TemplateEngine:
             # The actual PDF generation happens in export_to_pdf
             return template.render()
         else:
-            raise ValueError(f"Unsupported output format: {output_format}")
+            raise TemplateRenderingException(
+                template_name=template_name,
+                details=f"Unsupported output format: {output_format}"
+            )
 
     def export_to_pdf(
         self,
@@ -397,8 +420,11 @@ class TemplateEngine:
             Template information
         """
         if not self.validate_template(document_type, template_name):
-            raise ValueError(
-                f"Template '{template_name}' not found for document type '{document_type}'"
+            available = self.get_available_templates(document_type)
+            raise TemplateNotFoundException(
+                template_name=template_name,
+                document_type=document_type,
+                available_templates=available
             )
 
         template_class = self.registry.load_template_class(document_type, template_name)

@@ -4,6 +4,8 @@ import json
 from resume_agent_template_engine.core.template_engine import TemplateEngine
 import tempfile
 from typing import Dict, Any, Optional
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import TemplateNotFoundException
 
 
 class TemplateEditing:
@@ -39,8 +41,10 @@ class TemplateEditing:
             template_category
         )
         if template_name not in available_templates:
-            raise ValueError(
-                f"Template '{template_name}' not found in category '{template_category}'"
+            raise TemplateNotFoundException(
+                template_name=template_name,
+                document_type=template_category,
+                available_templates=available_templates
             )
 
     def generate_document(self):

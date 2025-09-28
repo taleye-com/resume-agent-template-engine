@@ -7,6 +7,16 @@ from resume_agent_template_engine.core.template_engine import (
     TemplateInterface,
     DocumentType,
 )
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import (
+    FileSystemException,
+    FileNotFoundException,
+    ValidationException,
+    TemplateRenderingException,
+    LaTeXCompilationException,
+    PDFGenerationException,
+    DependencyException
+)
 
 
 class ClassicCoverLetterTemplate(TemplateInterface):
@@ -34,9 +44,22 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         try:
             with open(self.template_path, "r", encoding="utf-8") as f:
                 self.template = f.read()
+        except FileNotFoundError as e:
+            raise FileNotFoundException(
+                file_path=self.template_path,
+                context={"details": str(e)}
+            ) from e
+        except PermissionError as e:
+            raise FileSystemException(
+                error_code=ErrorCode.FIL002,
+                file_path=self.template_path,
+                context={"details": str(e)}
+            ) from e
         except Exception as e:
-            raise IOError(
-                f"Error reading template file {self.template_path}: {e}"
+            raise FileSystemException(
+                error_code=ErrorCode.FIL006,
+                file_path=self.template_path,
+                context={"details": f"Error reading template file: {e}"}
             ) from e
 
     def validate_data(self):
@@ -52,7 +75,11 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         ]
         for section in required_sections:
             if section not in self.data:
-                raise ValueError(f"Missing required section: {section}")
+                raise ValidationException(
+                    error_code=ErrorCode.VAL001,
+                    field_path=section,
+                    context={"section": "cover letter data"}
+                )
 
         # Validate personal info fields
         required_personal_info = [
@@ -65,15 +92,27 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         ]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
-                raise ValueError(f"Missing required personal info field: {field}")
+                raise ValidationException(
+                    error_code=ErrorCode.VAL001,
+                    field_path=f"personalInfo.{field}",
+                    context={"section": "personalInfo"}
+                )
 
         # Validate recipient
         if not isinstance(self.data["recipient"], dict):
-            raise ValueError("Recipient must be a dictionary")
+            raise ValidationException(
+                error_code=ErrorCode.VAL002,
+                field_path="recipient",
+                context={"expected_type": "dict", "actual_type": type(self.data["recipient"]).__name__}
+            )
 
         # Check if body is a list of paragraphs
         if not isinstance(self.data["body"], list):
-            raise ValueError("Body must be a list of paragraphs")
+            raise ValidationException(
+                error_code=ErrorCode.VAL002,
+                field_path="body",
+                context={"expected_type": "list", "actual_type": type(self.data["body"]).__name__}
+            )
 
     def replace_special_chars(self, data):
         """Recursively replace special LaTeX characters in strings."""
@@ -172,7 +211,11 @@ class ClassicCoverLetterTemplate(TemplateInterface):
 
         # Check for unreplaced placeholders
         if re.search(r"{{.*?}}", cover_letter):
-            raise ValueError("Unreplaced placeholders detected")
+            unreplaced_matches = re.findall(r"{{(.*?)}}", cover_letter)
+            raise TemplateRenderingException(
+                template_name="classic",
+                details=f"Unreplaced placeholders detected: {', '.join(unreplaced_matches)}"
+            )
 
         return cover_letter
 
@@ -224,14 +267,28 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                     stderr=subprocess.STDOUT,
                 )
             except subprocess.CalledProcessError as e:
-                raise RuntimeError(
-                    "PDF compilation failed. Ensure pdflatex is installed."
+                raise LaTeXCompilationException(
+                    details="PDF compilation failed. Ensure pdflatex is installed.",
+                    template_name="classic",
+                    context={"return_code": e.returncode}
+                ) from e
+            except FileNotFoundError as e:
+                raise DependencyException(
+                    dependency="pdflatex",
+                    context={
+                        "details": "pdflatex not found. Please install BasicTeX or MacTeX:\n"
+                                  "brew install --cask basictex\n"
+                                  "Then restart your terminal or run: eval \"$(/usr/libexec/path_helper)\""
+                    }
                 ) from e
 
             pdf_path = os.path.join(tmpdir, "temp.pdf")
             if os.path.exists(pdf_path):
                 os.replace(pdf_path, output_path)
             else:
-                raise FileNotFoundError("PDF output not generated")
+                raise PDFGenerationException(
+                    details="PDF output not generated",
+                    template_name="classic"
+                )
 
         return output_path

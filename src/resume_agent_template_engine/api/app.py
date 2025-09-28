@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, EmailStr
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, Tuple
 import os
 import json
 import yaml
@@ -10,6 +10,27 @@ from resume_agent_template_engine.core.template_engine import (
     DocumentType,
     OutputFormat,
 )
+from resume_agent_template_engine.core.validation import (
+    validate_resume_data as enhanced_validate_resume_data,
+    ValidationLevel,
+    ValidationResult,
+    ValidationError
+)
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import (
+    ResumeCompilerException,
+    ValidationException,
+    TemplateNotFoundException,
+    InvalidRequestException,
+    MissingParameterException,
+    InvalidParameterException,
+    InternalServerException
+)
+from resume_agent_template_engine.core.responses import (
+    ResponseFormatter,
+    create_error_response,
+    create_success_response
+)
 import tempfile
 import uvicorn
 from enum import Enum
@@ -17,6 +38,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 import re
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Resume and Cover Letter Template Engine API",
@@ -32,6 +56,68 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Global exception handlers
+@app.exception_handler(ResumeCompilerException)
+async def resume_compiler_exception_handler(request: Request, exc: ResumeCompilerException):
+    """Handle all resume compiler exceptions with standardized format"""
+    logger.error(f"Resume compiler error: {exc.error_code} - {exc.formatted_message}")
+
+    response_data = ResponseFormatter.format_error_response(
+        exc,
+        request_id=getattr(request.state, 'request_id', None),
+        include_debug_info=False  # Set to True in development
+    )
+
+    return JSONResponse(
+        status_code=exc.http_status_code,
+        content=response_data
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle FastAPI HTTP exceptions with standardized format"""
+    # Convert HTTPException to standardized format
+    error_code = ErrorCode.API001  # Default API error
+
+    if exc.status_code == 404:
+        error_code = ErrorCode.API011
+    elif exc.status_code == 400:
+        error_code = ErrorCode.API003
+
+    response_data = create_error_response(
+        error_code,
+        request_id=getattr(request.state, 'request_id', None),
+        details=exc.detail
+    )
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=response_data
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions"""
+    logger.exception(f"Unexpected error: {str(exc)}")
+
+    internal_error = InternalServerException(
+        details=str(exc),
+        request_id=getattr(request.state, 'request_id', None)
+    )
+
+    response_data = ResponseFormatter.format_error_response(
+        internal_error,
+        include_debug_info=False  # Set to True in development
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content=response_data
+    )
 
 
 @app.get("/")
@@ -59,6 +145,7 @@ class DocumentRequest(BaseModel):
     format: str = "pdf"
     data: Dict[str, Any]
     clean_up: bool = True
+    ultra_validation: bool = False  # Optional enhanced validation
 
 
 class YAMLDocumentRequest(BaseModel):
@@ -67,6 +154,7 @@ class YAMLDocumentRequest(BaseModel):
     format: str = "pdf"
     yaml_data: str
     clean_up: bool = True
+    ultra_validation: bool = False  # Optional enhanced validation
 
 
 def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
@@ -74,7 +162,11 @@ def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
     try:
         return yaml.safe_load(yaml_content)
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML format: {str(e)}")
+        raise ValidationException(
+            ErrorCode.VAL014,
+            field_path="yaml_data",
+            context={"details": str(e)}
+        )
 
 
 def validate_date_format(date_str: str) -> bool:
@@ -92,27 +184,76 @@ def validate_date_format(date_str: str) -> bool:
 
 
 def validate_resume_data(data: Dict[str, Any]):
-    """Validate resume data structure and content"""
+    """Validate resume data structure and content (original validation)"""
     if "personalInfo" not in data:
-        raise ValueError("Personal information is required")
+        raise ValidationException(
+            ErrorCode.VAL001,
+            field_path="personalInfo",
+            context={"section": "root"}
+        )
 
-    personal_info = PersonalInfo(**data["personalInfo"])
+    try:
+        personal_info = PersonalInfo(**data["personalInfo"])
+    except Exception as e:
+        raise ValidationException(
+            ErrorCode.VAL002,
+            field_path="personalInfo",
+            context={"details": str(e)}
+        )
 
     # Validate dates in experience
     if "experience" in data and isinstance(data["experience"], list):
-        for exp in data["experience"]:
+        for i, exp in enumerate(data["experience"]):
             if "startDate" in exp and not validate_date_format(exp["startDate"]):
-                raise ValueError(
-                    f"Invalid start date format: {exp['startDate']}. Use YYYY-MM or YYYY-MM-DD"
+                raise ValidationException(
+                    ErrorCode.VAL006,
+                    field_path=f"experience[{i}].startDate",
+                    context={"date": exp["startDate"]}
                 )
             if (
                 "endDate" in exp
                 and exp["endDate"] != "Present"
                 and not validate_date_format(exp["endDate"])
             ):
-                raise ValueError(
-                    f"Invalid end date format: {exp['endDate']}. Use YYYY-MM or YYYY-MM-DD"
+                raise ValidationException(
+                    ErrorCode.VAL006,
+                    field_path=f"experience[{i}].endDate",
+                    context={"date": exp["endDate"]}
                 )
+
+
+def ultra_validate_and_normalize_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Ultra validation: Enhanced validation with normalization and LaTeX sanitization
+
+    Args:
+        data: Resume data to validate
+
+    Returns:
+        Normalized and sanitized data safe for LaTeX compilation
+
+    Raises:
+        ValueError: If validation fails with critical errors
+    """
+    result = enhanced_validate_resume_data(data, ValidationLevel.LENIENT)
+
+    if not result.is_valid:
+        # Collect error messages for user-friendly response
+        error_messages = []
+        for error in result.errors:
+            if error.suggested_fix:
+                error_messages.append(f"{error.field_path}: {error.message}. {error.suggested_fix}")
+            else:
+                error_messages.append(f"{error.field_path}: {error.message}")
+
+        # Create a validation exception with aggregated errors
+        raise ValidationException(
+            error_code=ErrorCode.VAL010,
+            field_path="data",
+            context={"details": "\n".join(error_messages)}
+        )
+
+    return result.normalized_data
 
 
 @app.post("/generate")
@@ -130,8 +271,14 @@ async def generate_document(
         FileResponse containing the generated document
     """
     try:
-        # Validate data format
-        validate_resume_data(request.data)
+        # Choose validation method based on request
+        if request.ultra_validation:
+            # Use ultra validation with normalization and sanitization
+            data_to_use = ultra_validate_and_normalize_data(request.data)
+        else:
+            # Use original simple validation
+            validate_resume_data(request.data)
+            data_to_use = request.data
 
         # Initialize template engine
         engine = TemplateEngine()
@@ -139,22 +286,26 @@ async def generate_document(
 
         # Validate document type
         if request.document_type not in available_templates:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Document type '{request.document_type}' not supported. Available types: {list(available_templates.keys())}",
+            raise InvalidParameterException(
+                parameter="document_type",
+                value=request.document_type,
+                context={"available_types": list(available_templates.keys())}
             )
 
         # Validate template exists
         if request.template not in available_templates[request.document_type]:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Template '{request.template}' not found for {request.document_type}. Available templates: {available_templates[request.document_type]}",
+            raise TemplateNotFoundException(
+                template_name=request.template,
+                document_type=request.document_type,
+                available_templates=available_templates[request.document_type]
             )
 
         # Validate format (currently only PDF is supported)
         if request.format.lower() != "pdf":
-            raise HTTPException(
-                status_code=400, detail="Only PDF format is currently supported"
+            raise InvalidParameterException(
+                parameter="format",
+                value=request.format,
+                context={"supported_formats": ["pdf"]}
             )
 
         # Create temporary file for the output
@@ -162,9 +313,9 @@ async def generate_document(
             output_path = tmp_file.name
 
         try:
-            # Generate the document using the new template engine
+            # Generate the document using normalized data
             engine.export_to_pdf(
-                request.document_type, request.template, request.data, output_path
+                request.document_type, request.template, normalized_data, output_path
             )
 
             # Determine filename based on document type
@@ -190,11 +341,12 @@ async def generate_document(
             raise e
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except HTTPException as e:
-        raise e
+        raise InvalidRequestException(details=str(e))
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.post("/generate-yaml")
@@ -215,8 +367,14 @@ async def generate_document_from_yaml(
         # Parse YAML data
         data = parse_yaml_data(request.yaml_data)
 
-        # Validate data format
-        validate_resume_data(data)
+        # Choose validation method based on request
+        if request.ultra_validation:
+            # Use ultra validation with normalization and sanitization
+            data_to_use = ultra_validate_and_normalize_data(data)
+        else:
+            # Use original simple validation
+            validate_resume_data(data)
+            data_to_use = data
 
         # Initialize template engine
         engine = TemplateEngine()
@@ -224,22 +382,26 @@ async def generate_document_from_yaml(
 
         # Validate document type
         if request.document_type not in available_templates:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Document type '{request.document_type}' not supported. Available types: {list(available_templates.keys())}",
+            raise InvalidParameterException(
+                parameter="document_type",
+                value=request.document_type,
+                context={"available_types": list(available_templates.keys())}
             )
 
         # Validate template exists
         if request.template not in available_templates[request.document_type]:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Template '{request.template}' not found for {request.document_type}. Available templates: {available_templates[request.document_type]}",
+            raise TemplateNotFoundException(
+                template_name=request.template,
+                document_type=request.document_type,
+                available_templates=available_templates[request.document_type]
             )
 
         # Validate format (currently only PDF is supported)
         if request.format.lower() != "pdf":
-            raise HTTPException(
-                status_code=400, detail="Only PDF format is currently supported"
+            raise InvalidParameterException(
+                parameter="format",
+                value=request.format,
+                context={"supported_formats": ["pdf"]}
             )
 
         # Create temporary file for the output
@@ -247,14 +409,14 @@ async def generate_document_from_yaml(
             output_path = tmp_file.name
 
         try:
-            # Generate the document using the new template engine
+            # Generate the document using the validated data
             engine.export_to_pdf(
-                request.document_type, request.template, data, output_path
+                request.document_type, request.template, data_to_use, output_path
             )
 
             # Determine filename based on document type
             person_name = (
-                data.get("personalInfo", {}).get("name", "output").replace(" ", "_")
+                data_to_use.get("personalInfo", {}).get("name", "output").replace(" ", "_")
             )
             filename = f"{request.document_type}_{person_name}.pdf"
 
@@ -273,11 +435,12 @@ async def generate_document_from_yaml(
             raise e
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except HTTPException as e:
-        raise e
+        raise InvalidRequestException(details=str(e))
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.get("/templates")
@@ -287,8 +450,11 @@ async def list_templates():
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
         return {"templates": available_templates}
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.get("/templates/{document_type}")
@@ -299,9 +465,12 @@ async def list_templates_by_type(document_type: DocumentType):
         available_templates = engine.get_available_templates(document_type)
         return {"templates": available_templates}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise ResourceNotFoundException(resource="template listing")
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.get("/template-info/{document_type}/{template_name}")
@@ -320,9 +489,12 @@ async def get_template_info(document_type: DocumentType, template_name: str):
 
         return template_info
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise ResourceNotFoundException(resource="template listing")
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.get("/schema/{document_type}")
@@ -379,8 +551,11 @@ async def get_document_schema(document_type: DocumentType):
                 },
                 "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com\ncontent: Dear Hiring Manager,...",
             }
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
 
 
 @app.get("/schema-yaml/{document_type}")
@@ -454,8 +629,13 @@ async def get_document_schema_yaml(document_type: DocumentType):
             "yaml_example": yaml_content,
             "description": f"Example YAML format for {document_type} generation",
         }
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise InternalServerException(details=str(e))
+
+
 
 
 @app.get("/health")

@@ -2,6 +2,13 @@ import os
 import importlib.util
 import warnings
 from resume_agent_template_engine.core.template_engine import TemplateEngine
+from resume_agent_template_engine.core.errors import ErrorCode
+from resume_agent_template_engine.core.exceptions import (
+    FileSystemException,
+    FileNotFoundException,
+    TemplateNotFoundException,
+    TemplateException
+)
 
 
 class TemplateManager:
@@ -42,8 +49,9 @@ class TemplateManager:
 
         # Check if templates directory exists
         if not os.path.exists(self.templates_dir):
-            raise FileNotFoundError(
-                f"Templates directory not found: {self.templates_dir}"
+            raise FileNotFoundException(
+                file_path=self.templates_dir,
+                context={"details": "Templates directory not found"}
             )
 
         # Scan for template categories (resume, cover_letter, etc.)
@@ -102,10 +110,20 @@ class TemplateManager:
         """
         # Validate category and template name
         if category not in self.available_templates:
-            raise ValueError(f"Category not found: {category}")
+            available_categories = list(self.available_templates.keys())
+            raise TemplateNotFoundException(
+                template_name="",
+                document_type=category,
+                available_templates=available_categories
+            )
 
         if template_name not in self.available_templates[category]:
-            raise ValueError(f"Template not found: {template_name}")
+            available_templates = self.available_templates[category]
+            raise TemplateNotFoundException(
+                template_name=template_name,
+                document_type=category,
+                available_templates=available_templates
+            )
 
         # Construct the path to the helper.py file
         helper_path = os.path.join(
@@ -154,8 +172,14 @@ class TemplateManager:
             # If we found any template class, return the first one
             return getattr(module, class_list[0])
 
-        raise ValueError(
-            f"Template class not found in {helper_path}. Tried: {', '.join(class_name_options)}"
+        raise TemplateException(
+            error_code=ErrorCode.TPL005,
+            template_name=template_name,
+            document_type=category,
+            context={
+                "module_path": helper_path,
+                "tried_classes": ', '.join(class_name_options)
+            }
         )
 
     def create_template(self, category, template_name, data):
