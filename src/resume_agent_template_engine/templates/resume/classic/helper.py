@@ -63,20 +63,25 @@ class ClassicResumeTemplate(TemplateInterface):
             ) from e
 
     def validate_data(self):
-        """Ensure only essential required sections are present in the JSON data."""
-        # Only validate the truly essential sections
-        if "personalInfo" not in self.data:
-            raise ValidationException(
-                error_code=ErrorCode.VAL001,
-                field_path="personalInfo",
-                context={"section": "resume data"}
-            )
+        """Validate essential data fields with consistent error handling"""
+        self._validate_required_sections()
+        self._validate_personal_info()
+        self._validate_document_specific_fields()
 
-        # Validate only the most essential personal info fields
-        required_personal_info = [
-            "name",
-            "email",
-        ]
+    def _validate_required_sections(self):
+        """Validate document-type specific required sections"""
+        required_sections = ["personalInfo"]
+        for section in required_sections:
+            if section not in self.data:
+                raise ValidationException(
+                    error_code=ErrorCode.VAL001,
+                    field_path=section,
+                    context={"section": "resume data"}
+                )
+
+    def _validate_personal_info(self):
+        """Validate essential personal info fields consistently"""
+        required_personal_info = ["name", "email"]
         for field in required_personal_info:
             if field not in self.data["personalInfo"]:
                 raise ValidationException(
@@ -84,6 +89,11 @@ class ClassicResumeTemplate(TemplateInterface):
                     field_path=f"personalInfo.{field}",
                     context={"section": "personalInfo"}
                 )
+
+    def _validate_document_specific_fields(self):
+        """Validate resume-specific fields"""
+        # Resume doesn't have additional required fields beyond personalInfo
+        pass
 
     def replace_special_chars(self, data):
         """Recursively replace special LaTeX characters in strings."""
@@ -99,6 +109,38 @@ class ClassicResumeTemplate(TemplateInterface):
         if isinstance(data, dict):
             return {k: self.replace_special_chars(v) for k, v in data.items()}
         return data
+
+    def get_field_with_fallback(self, obj: dict, primary_field: str, fallback_fields: List[str] = None, default_value: Any = None):
+        """Get field with fallback options and default value"""
+        if primary_field in obj and obj[primary_field]:
+            return obj[primary_field]
+
+        if fallback_fields:
+            for fallback in fallback_fields:
+                if fallback in obj and obj[fallback]:
+                    return obj[fallback]
+
+        return default_value
+
+    def get_field_with_smart_default(self, path: str, default_value: Any = None, smart_default_fn=None):
+        """Get field with smart defaults"""
+        keys = path.split('.')
+        obj = self.data
+
+        try:
+            for key in keys:
+                obj = obj[key]
+            return obj if obj else (smart_default_fn() if smart_default_fn else default_value)
+        except (KeyError, TypeError):
+            return smart_default_fn() if smart_default_fn else default_value
+
+    def generate_section_with_header(self, section_name: str, content_generator_fn, header_name: str = None):
+        """Generate section with conditional header"""
+        content = content_generator_fn()
+        if content:
+            header = header_name or section_name.replace('_', ' ').title()
+            return f"\\section{{{header}}}\n{content}"
+        return ""
 
     def generate_personal_info(self) -> str:
         """
@@ -155,13 +197,27 @@ class ClassicResumeTemplate(TemplateInterface):
             return ""
         sections = []
         for edu in self.data["education"]:
+            # Use fallback logic for education fields
+            degree = self.get_field_with_fallback(edu, "degree", ["title", "qualification"], "Degree")
+            institution = self.get_field_with_fallback(edu, "institution", ["school", "university", "college"], "Institution")
+
+            # Handle date fields with fallbacks
+            start_date = edu.get("startDate", "")
+            end_date = self.get_field_with_fallback(edu, "endDate", ["end_date", "date", "graduationDate"], "")
+            date_range = f"{start_date} -- {end_date}" if start_date and end_date else (end_date or start_date)
+
+            # Use fallback for course details
+            courses = self.get_field_with_fallback(edu, "notableCourseWorks", ["courses", "coursework", "details"], [])
+            projects = self.get_field_with_fallback(edu, "projects", ["academicProjects"], [])
+            focus = self.get_field_with_fallback(edu, "focus", ["major", "specialization", "concentration"], "")
+
             entry = (
-                f"\\textbf{{{edu.get('degree', 'Degree')}}} -- {edu.get('institution', 'Institution')} "
-                f"\\hfill {edu.get('startDate', '')} -- {edu.get('endDate', edu.get('date', ''))}\n"
+                f"\\textbf{{{degree}}} -- {institution} "
+                f"\\hfill {date_range}\n"
                 "\\begin{highlights}\n"
-                f"\\item \\textbf{{Focus:}} {edu.get('focus', '')}\n"
-                f"\\item \\textbf{{Courses:}} {', '.join(edu.get('notableCourseWorks', edu.get('details', [])))}\n"
-                f"\\item \\textbf{{Projects:}} {', '.join(edu.get('projects', []))}\n"
+                f"\\item \\textbf{{Focus:}} {focus}\n"
+                f"\\item \\textbf{{Courses:}} {', '.join(courses) if courses else 'N/A'}\n"
+                f"\\item \\textbf{{Projects:}} {', '.join(projects) if projects else 'N/A'}\n"
                 "\\end{highlights}"
             )
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
@@ -173,15 +229,20 @@ class ClassicResumeTemplate(TemplateInterface):
             return ""
         sections = []
         for exp in self.data["experience"]:
+            # Use smart field handling for dates
             start_date = exp.get("startDate", "")
-            end_date = exp.get("endDate", "Present")
-            date_range = f"{start_date} -- {end_date}" if start_date else "Present"
+            end_date = self.get_field_with_fallback(exp, "endDate", ["end_date"], "Present")
+            date_range = f"{start_date} -- {end_date}" if start_date else end_date
 
-            # Use achievements if available, otherwise use details
-            achievements = exp.get("achievements", exp.get("details", []))
-            
+            # Use unified fallback logic for achievements/details
+            achievements = self.get_field_with_fallback(exp, "achievements", ["details", "responsibilities", "duties"], [])
+
+            # Use fallback for title and company
+            title = self.get_field_with_fallback(exp, "title", ["position", "role"], "Position")
+            company = self.get_field_with_fallback(exp, "company", ["employer", "organization"], "Company")
+
             entry = (
-                f"\\textbf{{{exp.get('title', 'Position')}}}, {exp.get('company', 'Company')} \\hfill {date_range}\n"
+                f"\\textbf{{{title}}}, {company} \\hfill {date_range}\n"
                 "\\begin{highlights}\n"
                 + "\n".join([f"\\item {ach}" for ach in achievements])
                 + "\n\\end{highlights}"
@@ -195,26 +256,29 @@ class ClassicResumeTemplate(TemplateInterface):
             return ""
         sections = []
         for proj in self.data["projects"]:
-            # Handle both simple string description and list of descriptions
-            description = proj.get("description", "")
+            # Use fallback logic for project name
+            name = self.get_field_with_fallback(proj, "name", ["title", "project_name"], "Project")
+
+            # Handle both simple string description and list of descriptions with fallbacks
+            description = self.get_field_with_fallback(proj, "description", ["summary", "desc"], "")
             if isinstance(description, list):
                 desc_points = ", ".join(description)
             else:
                 desc_points = description
-                
-            # Handle different field names for technologies/tools
-            tools = proj.get("tools", proj.get("technologies", []))
-            achievements = proj.get("achievements", [])
+
+            # Handle different field names for technologies/tools with fallbacks
+            tools = self.get_field_with_fallback(proj, "tools", ["technologies", "tech_stack", "stack"], [])
+            achievements = self.get_field_with_fallback(proj, "achievements", ["accomplishments", "results", "outcomes"], [])
 
             entry_lines = [
-                f"\\textbf{{{proj.get('name', 'Project')}}} - \\textit{{{desc_points}}}",
+                f"\\textbf{{{name}}} - \\textit{{{desc_points}}}",
                 "\\begin{highlights}"
             ]
-            
+
             # Add tools/technologies if available
             if tools:
                 entry_lines.append(f"\\item \\textbf{{Tools:}} {', '.join(tools)}")
-                
+
             # Add achievements if available
             if achievements:
                 entry_lines.append("\\item \\textbf{Achievements:}")
@@ -222,46 +286,56 @@ class ClassicResumeTemplate(TemplateInterface):
                 for ach in achievements:
                     entry_lines.append(f"\\item {ach}")
                 entry_lines.append("    \\end{itemize}")
-                
+
             entry_lines.append("\\end{highlights}")
-            
+
             entry = "\n".join(entry_lines)
             sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
         return "\n".join(sections)
 
     def generate_articles_and_publications(self):
         """Generate the Articles & Publications section."""
-        if not self.data.get("articlesAndPublications"):
+        # Check multiple possible field names
+        publications = self.get_field_with_fallback(self.data, "articlesAndPublications", ["publications", "articles", "papers"], [])
+        if not publications:
             return ""
-        items = "\n".join(
-            f"\\item \\textbf{{{pub['title']}}} -- {pub['date']}"
-            for pub in self.data["articlesAndPublications"]
-        )
-        return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{items}\\end{{highlights}}\\end{{onecolentry}}"
+
+        items = []
+        for pub in publications:
+            title = self.get_field_with_fallback(pub, "title", ["name"], "Publication")
+            date = self.get_field_with_fallback(pub, "date", ["published_date", "year"], "")
+            items.append(f"\\item \\textbf{{{title}}} -- {date}")
+
+        items_str = "\n".join(items)
+        return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{items_str}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_achievements(self):
         """Generate the Achievements section."""
-        if not self.data.get("achievements"):
+        # Check multiple possible field names
+        achievements = self.get_field_with_fallback(self.data, "achievements", ["accomplishments", "awards", "honors"], [])
+        if not achievements:
             return ""
-        bullets = "\n".join(f"\\item {item}" for item in self.data["achievements"])
+        bullets = "\n".join(f"\\item {item}" for item in achievements)
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_certifications(self):
         """Generate the Certifications section."""
-        if not self.data.get("certifications"):
+        # Check multiple possible field names
+        certifications = self.get_field_with_fallback(self.data, "certifications", ["certificates", "credentials", "licenses"], [])
+        if not certifications:
             return ""
-        bullets = "\n".join(f"\\item {item}" for item in self.data["certifications"])
+        bullets = "\n".join(f"\\item {item}" for item in certifications)
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_technologies_and_skills(self):
         """Generate the Technologies & Skills section."""
-        # Handle both structured skills (technologiesAndSkills) and simple skills array
-        skills_data = self.data.get("technologiesAndSkills") or self.data.get("skills")
+        # Handle multiple possible field names with fallback
+        skills_data = self.get_field_with_fallback(self.data, "technologiesAndSkills", ["skills", "technologies", "tech_skills"], [])
         if not skills_data:
             return ""
-            
+
         sections = []
-        
+
         # If it's a simple array of skills, treat them as general skills
         if isinstance(skills_data, list) and all(isinstance(skill, str) for skill in skills_data):
             entry = f"\\textbf{{Skills}}: {', '.join(skills_data)}"
@@ -269,40 +343,43 @@ class ClassicResumeTemplate(TemplateInterface):
         else:
             # Handle structured skills with categories
             for skill in skills_data:
-                entry = f"\\textbf{{{skill['category']}}}: {', '.join(skill['skills'])}"
-                sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
+                # Use fallback for category and skills fields
+                category = self.get_field_with_fallback(skill, "category", ["name", "type"], "Skills")
+                skill_list = self.get_field_with_fallback(skill, "skills", ["items", "technologies"], [])
+
+                if skill_list:
+                    entry = f"\\textbf{{{category}}}: {', '.join(skill_list)}"
+                    sections.append(f"\\begin{{onecolentry}}\n{entry}\\end{{onecolentry}}")
         return "\n".join(sections)
+
+    def generate_date(self):
+        """Generate date with smart formatting for resumes if needed"""
+        from datetime import datetime
+
+        date = self.data.get("date", "")
+        if date:
+            return date
+
+        # For resumes, we typically don't auto-generate dates
+        # but this provides consistency with cover letter template
+        return ""
 
     def generate_resume(self):
         """Generate the final LaTeX resume by replacing placeholders."""
         info = self.data["personalInfo"]
 
-        # Generate content for each section and include header if content exists
+        # Generate content for each section using unified pattern
         personal_info = self.generate_personal_info()
-        
-        professional_summary_content = self.generate_professional_summary()
-        professional_summary = ("\\section{Professional Summary}\n" + professional_summary_content) if professional_summary_content else ""
-        
-        education_content = self.generate_education()
-        education = ("\\section{Education}\n" + education_content) if education_content else ""
-        
-        experience_content = self.generate_experience()
-        experience = ("\\section{Experience}\n" + experience_content) if experience_content else ""
-        
-        projects_content = self.generate_projects()
-        projects = ("\\section{Projects}\n" + projects_content) if projects_content else ""
-        
-        articles_content = self.generate_articles_and_publications()
-        articles_and_publications = ("\\section{Articles \\& Publications}\n" + articles_content) if articles_content else ""
-        
-        achievements_content = self.generate_achievements()
-        achievements = ("\\section{Achievements}\n" + achievements_content) if achievements_content else ""
-        
-        certifications_content = self.generate_certifications()
-        certifications = ("\\section{Certifications}\n" + certifications_content) if certifications_content else ""
-        
-        skills_content = self.generate_technologies_and_skills()
-        technologies_and_skills = ("\\section{Technologies \\& Skills}\n" + skills_content) if skills_content else ""
+
+        # Use the unified section generation pattern
+        professional_summary = self.generate_section_with_header("professional_summary", self.generate_professional_summary, "Professional Summary")
+        education = self.generate_section_with_header("education", self.generate_education, "Education")
+        experience = self.generate_section_with_header("experience", self.generate_experience, "Experience")
+        projects = self.generate_section_with_header("projects", self.generate_projects, "Projects")
+        articles_and_publications = self.generate_section_with_header("articles_and_publications", self.generate_articles_and_publications, "Articles \\& Publications")
+        achievements = self.generate_section_with_header("achievements", self.generate_achievements, "Achievements")
+        certifications = self.generate_section_with_header("certifications", self.generate_certifications, "Certifications")
+        technologies_and_skills = self.generate_section_with_header("technologies_and_skills", self.generate_technologies_and_skills, "Technologies \\& Skills")
 
         # Section replacements
         section_replacements = {
@@ -317,13 +394,11 @@ class ClassicResumeTemplate(TemplateInterface):
             "{{technologies_and_skills}}": technologies_and_skills,
         }
 
-        # Combine all replacements
-        all_replacements = {**section_replacements}
-
         resume = self.template
-        for ph, content in all_replacements.items():
-            resume = resume.replace(ph, content)
+        for placeholder, content in section_replacements.items():
+            resume = resume.replace(placeholder, content)
 
+        # Check for unreplaced placeholders
         if re.search(r"{{.*?}}", resume):
             unreplaced_matches = re.findall(r"{{(.*?)}}", resume)
             raise TemplateRenderingException(
