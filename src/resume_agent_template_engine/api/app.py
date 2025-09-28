@@ -14,7 +14,7 @@ from resume_agent_template_engine.core.validation import (
     validate_resume_data as enhanced_validate_resume_data,
     ValidationLevel,
     ValidationResult,
-    ValidationError
+    ValidationError,
 )
 from resume_agent_template_engine.core.errors import ErrorCode
 from resume_agent_template_engine.core.exceptions import (
@@ -24,12 +24,12 @@ from resume_agent_template_engine.core.exceptions import (
     InvalidRequestException,
     MissingParameterException,
     InvalidParameterException,
-    InternalServerException
+    InternalServerException,
 )
 from resume_agent_template_engine.core.responses import (
     ResponseFormatter,
     create_error_response,
-    create_success_response
+    create_success_response,
 )
 import tempfile
 import uvicorn
@@ -60,20 +60,19 @@ app.add_middleware(
 
 # Global exception handlers
 @app.exception_handler(ResumeCompilerException)
-async def resume_compiler_exception_handler(request: Request, exc: ResumeCompilerException):
+async def resume_compiler_exception_handler(
+    request: Request, exc: ResumeCompilerException
+):
     """Handle all resume compiler exceptions with standardized format"""
     logger.error(f"Resume compiler error: {exc.error_code} - {exc.formatted_message}")
 
     response_data = ResponseFormatter.format_error_response(
         exc,
-        request_id=getattr(request.state, 'request_id', None),
-        include_debug_info=False  # Set to True in development
+        request_id=getattr(request.state, "request_id", None),
+        include_debug_info=False,  # Set to True in development
     )
 
-    return JSONResponse(
-        status_code=exc.http_status_code,
-        content=response_data
-    )
+    return JSONResponse(status_code=exc.http_status_code, content=response_data)
 
 
 @app.exception_handler(HTTPException)
@@ -89,14 +88,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
     response_data = create_error_response(
         error_code,
-        request_id=getattr(request.state, 'request_id', None),
-        details=exc.detail
+        request_id=getattr(request.state, "request_id", None),
+        details=exc.detail,
     )
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=response_data
-    )
+    return JSONResponse(status_code=exc.status_code, content=response_data)
 
 
 @app.exception_handler(Exception)
@@ -105,19 +101,14 @@ async def general_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unexpected error: {str(exc)}")
 
     internal_error = InternalServerException(
-        details=str(exc),
-        request_id=getattr(request.state, 'request_id', None)
+        details=str(exc), request_id=getattr(request.state, "request_id", None)
     )
 
     response_data = ResponseFormatter.format_error_response(
-        internal_error,
-        include_debug_info=False  # Set to True in development
+        internal_error, include_debug_info=False  # Set to True in development
     )
 
-    return JSONResponse(
-        status_code=500,
-        content=response_data
-    )
+    return JSONResponse(status_code=500, content=response_data)
 
 
 @app.get("/")
@@ -163,9 +154,7 @@ def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
         return yaml.safe_load(yaml_content)
     except yaml.YAMLError as e:
         raise ValidationException(
-            ErrorCode.VAL014,
-            field_path="yaml_data",
-            context={"details": str(e)}
+            ErrorCode.VAL014, field_path="yaml_data", context={"details": str(e)}
         )
 
 
@@ -187,18 +176,14 @@ def validate_resume_data(data: Dict[str, Any]):
     """Validate resume data structure and content (original validation)"""
     if "personalInfo" not in data:
         raise ValidationException(
-            ErrorCode.VAL001,
-            field_path="personalInfo",
-            context={"section": "root"}
+            ErrorCode.VAL001, field_path="personalInfo", context={"section": "root"}
         )
 
     try:
         personal_info = PersonalInfo(**data["personalInfo"])
     except Exception as e:
         raise ValidationException(
-            ErrorCode.VAL002,
-            field_path="personalInfo",
-            context={"details": str(e)}
+            ErrorCode.VAL002, field_path="personalInfo", context={"details": str(e)}
         )
 
     # Validate dates in experience
@@ -208,7 +193,7 @@ def validate_resume_data(data: Dict[str, Any]):
                 raise ValidationException(
                     ErrorCode.VAL006,
                     field_path=f"experience[{i}].startDate",
-                    context={"date": exp["startDate"]}
+                    context={"date": exp["startDate"]},
                 )
             if (
                 "endDate" in exp
@@ -218,7 +203,7 @@ def validate_resume_data(data: Dict[str, Any]):
                 raise ValidationException(
                     ErrorCode.VAL006,
                     field_path=f"experience[{i}].endDate",
-                    context={"date": exp["endDate"]}
+                    context={"date": exp["endDate"]},
                 )
 
 
@@ -242,7 +227,9 @@ def ultra_validate_and_normalize_data(data: Dict[str, Any]) -> Dict[str, Any]:
         error_messages = []
         for error in result.errors:
             if error.suggested_fix:
-                error_messages.append(f"{error.field_path}: {error.message}. {error.suggested_fix}")
+                error_messages.append(
+                    f"{error.field_path}: {error.message}. {error.suggested_fix}"
+                )
             else:
                 error_messages.append(f"{error.field_path}: {error.message}")
 
@@ -250,7 +237,7 @@ def ultra_validate_and_normalize_data(data: Dict[str, Any]) -> Dict[str, Any]:
         raise ValidationException(
             error_code=ErrorCode.VAL010,
             field_path="data",
-            context={"details": "\n".join(error_messages)}
+            context={"details": "\n".join(error_messages)},
         )
 
     return result.normalized_data
@@ -289,7 +276,7 @@ async def generate_document(
             raise InvalidParameterException(
                 parameter="document_type",
                 value=request.document_type,
-                context={"available_types": list(available_templates.keys())}
+                context={"available_types": list(available_templates.keys())},
             )
 
         # Validate template exists
@@ -297,7 +284,7 @@ async def generate_document(
             raise TemplateNotFoundException(
                 template_name=request.template,
                 document_type=request.document_type,
-                available_templates=available_templates[request.document_type]
+                available_templates=available_templates[request.document_type],
             )
 
         # Validate format (currently only PDF is supported)
@@ -305,7 +292,7 @@ async def generate_document(
             raise InvalidParameterException(
                 parameter="format",
                 value=request.format,
-                context={"supported_formats": ["pdf"]}
+                context={"supported_formats": ["pdf"]},
             )
 
         # Create temporary file for the output
@@ -385,7 +372,7 @@ async def generate_document_from_yaml(
             raise InvalidParameterException(
                 parameter="document_type",
                 value=request.document_type,
-                context={"available_types": list(available_templates.keys())}
+                context={"available_types": list(available_templates.keys())},
             )
 
         # Validate template exists
@@ -393,7 +380,7 @@ async def generate_document_from_yaml(
             raise TemplateNotFoundException(
                 template_name=request.template,
                 document_type=request.document_type,
-                available_templates=available_templates[request.document_type]
+                available_templates=available_templates[request.document_type],
             )
 
         # Validate format (currently only PDF is supported)
@@ -401,7 +388,7 @@ async def generate_document_from_yaml(
             raise InvalidParameterException(
                 parameter="format",
                 value=request.format,
-                context={"supported_formats": ["pdf"]}
+                context={"supported_formats": ["pdf"]},
             )
 
         # Create temporary file for the output
@@ -416,7 +403,9 @@ async def generate_document_from_yaml(
 
             # Determine filename based on document type
             person_name = (
-                data_to_use.get("personalInfo", {}).get("name", "output").replace(" ", "_")
+                data_to_use.get("personalInfo", {})
+                .get("name", "output")
+                .replace(" ", "_")
             )
             filename = f"{request.document_type}_{person_name}.pdf"
 
@@ -634,8 +623,6 @@ async def get_document_schema_yaml(document_type: DocumentType):
         raise
     except Exception as e:
         raise InternalServerException(details=str(e))
-
-
 
 
 @app.get("/health")

@@ -7,7 +7,13 @@ from typing import Dict, Any, Optional, List
 import uuid
 from datetime import datetime
 
-from .errors import ErrorCode, ErrorCategory, ErrorSeverity, error_registry, get_error_definition
+from .errors import (
+    ErrorCode,
+    ErrorCategory,
+    ErrorSeverity,
+    error_registry,
+    get_error_definition,
+)
 
 
 class ResumeCompilerException(Exception):
@@ -18,7 +24,7 @@ class ResumeCompilerException(Exception):
         error_code: ErrorCode,
         context: Optional[Dict[str, Any]] = None,
         original_exception: Optional[Exception] = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ):
         """
         Initialize base exception
@@ -41,7 +47,9 @@ class ResumeCompilerException(Exception):
             raise ValueError(f"Unknown error code: {error_code}")
 
         # Format message with context
-        self.formatted_message = error_registry.format_message(error_code, **self.context)
+        self.formatted_message = error_registry.format_message(
+            error_code, **self.context
+        )
 
         # Call parent constructor
         super().__init__(self.formatted_message)
@@ -82,7 +90,7 @@ class ResumeCompilerException(Exception):
                 "message": self.formatted_message,
                 "suggested_fix": self.suggested_fix,
                 "request_id": self.request_id,
-                "timestamp": self.timestamp.isoformat() + "Z"
+                "timestamp": self.timestamp.isoformat() + "Z",
             }
         }
 
@@ -94,7 +102,7 @@ class ResumeCompilerException(Exception):
         if self.original_exception and not self.is_user_facing:
             result["error"]["original_error"] = {
                 "type": type(self.original_exception).__name__,
-                "message": str(self.original_exception)
+                "message": str(self.original_exception),
             }
 
         return result
@@ -108,7 +116,7 @@ class ValidationException(ResumeCompilerException):
         error_code: ErrorCode,
         field_path: Optional[str] = None,
         field_value: Any = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize validation exception
@@ -119,13 +127,13 @@ class ValidationException(ResumeCompilerException):
             field_value: Value that failed validation
             **kwargs: Additional context parameters
         """
-        context = kwargs.get('context', {})
+        context = kwargs.get("context", {})
         if field_path:
-            context['field'] = field_path
+            context["field"] = field_path
         if field_value is not None:
-            context['value'] = field_value
+            context["value"] = field_value
 
-        kwargs['context'] = context
+        kwargs["context"] = context
         super().__init__(error_code, **kwargs)
 
         self.field_path = field_path
@@ -134,21 +142,25 @@ class ValidationException(ResumeCompilerException):
 
 class DataValidationException(ValidationException):
     """Exception for data format and structure validation errors"""
+
     pass
 
 
 class SchemaValidationException(ValidationException):
     """Exception for JSON/YAML schema validation errors"""
+
     pass
 
 
 class FormatValidationException(ValidationException):
     """Exception for field format validation errors (email, phone, etc.)"""
+
     pass
 
 
 class SecurityValidationException(ValidationException):
     """Exception for security-related validation errors"""
+
     pass
 
 
@@ -160,7 +172,7 @@ class TemplateException(ResumeCompilerException):
         error_code: ErrorCode,
         template_name: Optional[str] = None,
         document_type: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize template exception
@@ -171,13 +183,13 @@ class TemplateException(ResumeCompilerException):
             document_type: Type of document
             **kwargs: Additional context parameters
         """
-        context = kwargs.get('context', {})
+        context = kwargs.get("context", {})
         if template_name:
-            context['template'] = template_name
+            context["template"] = template_name
         if document_type:
-            context['document_type'] = document_type
+            context["document_type"] = document_type
 
-        kwargs['context'] = context
+        kwargs["context"] = context
         super().__init__(error_code, **kwargs)
 
         self.template_name = template_name
@@ -187,11 +199,17 @@ class TemplateException(ResumeCompilerException):
 class TemplateNotFoundException(TemplateException):
     """Exception for template not found errors"""
 
-    def __init__(self, template_name: str, document_type: str, available_templates: List[str] = None, **kwargs):
-        context = kwargs.get('context', {})
+    def __init__(
+        self,
+        template_name: str,
+        document_type: str,
+        available_templates: List[str] = None,
+        **kwargs,
+    ):
+        context = kwargs.get("context", {})
         if available_templates:
-            context['available_templates'] = ', '.join(available_templates)
-        kwargs['context'] = context
+            context["available_templates"] = ", ".join(available_templates)
+        kwargs["context"] = context
         super().__init__(ErrorCode.TPL001, template_name, document_type, **kwargs)
 
 
@@ -199,9 +217,9 @@ class TemplateCompilationException(TemplateException):
     """Exception for template compilation errors"""
 
     def __init__(self, template_name: str, details: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.TPL002, template_name, **kwargs)
 
 
@@ -209,9 +227,9 @@ class TemplateRenderingException(TemplateException):
     """Exception for template rendering errors"""
 
     def __init__(self, template_name: str, details: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.TPL003, template_name, **kwargs)
 
 
@@ -219,9 +237,9 @@ class LaTeXCompilationException(TemplateException):
     """Exception for LaTeX compilation errors"""
 
     def __init__(self, details: str, template_name: Optional[str] = None, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.TPL007, template_name, **kwargs)
 
 
@@ -229,9 +247,9 @@ class PDFGenerationException(TemplateException):
     """Exception for PDF generation errors"""
 
     def __init__(self, details: str, template_name: Optional[str] = None, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.TPL008, template_name, **kwargs)
 
 
@@ -243,7 +261,7 @@ class APIException(ResumeCompilerException):
         error_code: ErrorCode,
         endpoint: Optional[str] = None,
         method: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize API exception
@@ -254,13 +272,13 @@ class APIException(ResumeCompilerException):
             method: HTTP method used
             **kwargs: Additional context parameters
         """
-        context = kwargs.get('context', {})
+        context = kwargs.get("context", {})
         if endpoint:
-            context['endpoint'] = endpoint
+            context["endpoint"] = endpoint
         if method:
-            context['method'] = method
+            context["method"] = method
 
-        kwargs['context'] = context
+        kwargs["context"] = context
         super().__init__(error_code, **kwargs)
 
         self.endpoint = endpoint
@@ -271,9 +289,9 @@ class InvalidRequestException(APIException):
     """Exception for invalid API requests"""
 
     def __init__(self, details: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.API001, **kwargs)
 
 
@@ -281,9 +299,9 @@ class MissingParameterException(APIException):
     """Exception for missing required parameters"""
 
     def __init__(self, parameter: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['parameter'] = parameter
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["parameter"] = parameter
+        kwargs["context"] = context
         super().__init__(ErrorCode.API002, **kwargs)
 
 
@@ -291,10 +309,10 @@ class InvalidParameterException(APIException):
     """Exception for invalid parameter values"""
 
     def __init__(self, parameter: str, value: Any, **kwargs):
-        context = kwargs.get('context', {})
-        context['parameter'] = parameter
-        context['value'] = str(value)
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["parameter"] = parameter
+        context["value"] = str(value)
+        kwargs["context"] = context
         super().__init__(ErrorCode.API003, **kwargs)
 
 
@@ -302,9 +320,9 @@ class ResourceNotFoundException(APIException):
     """Exception for resource not found errors"""
 
     def __init__(self, resource: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['resource'] = resource
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["resource"] = resource
+        kwargs["context"] = context
         super().__init__(ErrorCode.API011, **kwargs)
 
 
@@ -312,10 +330,7 @@ class SystemException(ResumeCompilerException):
     """Exception for system-level errors"""
 
     def __init__(
-        self,
-        error_code: ErrorCode,
-        component: Optional[str] = None,
-        **kwargs
+        self, error_code: ErrorCode, component: Optional[str] = None, **kwargs
     ):
         """
         Initialize system exception
@@ -325,11 +340,11 @@ class SystemException(ResumeCompilerException):
             component: System component that caused the error
             **kwargs: Additional context parameters
         """
-        context = kwargs.get('context', {})
+        context = kwargs.get("context", {})
         if component:
-            context['component'] = component
+            context["component"] = component
 
-        kwargs['context'] = context
+        kwargs["context"] = context
         super().__init__(error_code, **kwargs)
 
         self.component = component
@@ -339,9 +354,9 @@ class InternalServerException(SystemException):
     """Exception for internal server errors"""
 
     def __init__(self, details: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['details'] = details
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["details"] = details
+        kwargs["context"] = context
         super().__init__(ErrorCode.SYS001, **kwargs)
 
 
@@ -349,9 +364,9 @@ class DependencyException(SystemException):
     """Exception for missing dependencies"""
 
     def __init__(self, dependency: str, **kwargs):
-        context = kwargs.get('context', {})
-        context['dependency'] = dependency
-        kwargs['context'] = context
+        context = kwargs.get("context", {})
+        context["dependency"] = dependency
+        kwargs["context"] = context
         super().__init__(ErrorCode.SYS006, **kwargs)
 
 
@@ -363,7 +378,7 @@ class FileSystemException(ResumeCompilerException):
         error_code: ErrorCode,
         file_path: Optional[str] = None,
         operation: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize file system exception
@@ -374,13 +389,13 @@ class FileSystemException(ResumeCompilerException):
             operation: File operation being performed
             **kwargs: Additional context parameters
         """
-        context = kwargs.get('context', {})
+        context = kwargs.get("context", {})
         if file_path:
-            context['file_path'] = file_path
+            context["file_path"] = file_path
         if operation:
-            context['operation'] = operation
+            context["operation"] = operation
 
-        kwargs['context'] = context
+        kwargs["context"] = context
         super().__init__(error_code, **kwargs)
 
         self.file_path = file_path
@@ -410,46 +425,35 @@ class DiskSpaceException(FileSystemException):
 
 # Convenience functions for creating common exceptions
 
+
 def create_validation_error(
-    error_code: ErrorCode,
-    field_path: str,
-    field_value: Any = None,
-    **context
+    error_code: ErrorCode, field_path: str, field_value: Any = None, **context
 ) -> ValidationException:
     """Create a validation exception with field context"""
     return ValidationException(
         error_code=error_code,
         field_path=field_path,
         field_value=field_value,
-        context=context
+        context=context,
     )
 
 
 def create_template_error(
-    error_code: ErrorCode,
-    template_name: str,
-    document_type: str = None,
-    **context
+    error_code: ErrorCode, template_name: str, document_type: str = None, **context
 ) -> TemplateException:
     """Create a template exception with template context"""
     return TemplateException(
         error_code=error_code,
         template_name=template_name,
         document_type=document_type,
-        context=context
+        context=context,
     )
 
 
 def create_api_error(
-    error_code: ErrorCode,
-    endpoint: str = None,
-    method: str = None,
-    **context
+    error_code: ErrorCode, endpoint: str = None, method: str = None, **context
 ) -> APIException:
     """Create an API exception with request context"""
     return APIException(
-        error_code=error_code,
-        endpoint=endpoint,
-        method=method,
-        context=context
+        error_code=error_code, endpoint=endpoint, method=method, context=context
     )

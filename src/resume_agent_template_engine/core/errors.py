@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ErrorCategory(str, Enum):
     """Error categories for classification"""
+
     VALIDATION = "validation"
     TEMPLATE = "template"
     API = "api"
@@ -24,10 +25,11 @@ class ErrorCategory(str, Enum):
 
 class ErrorSeverity(str, Enum):
     """Error severity levels"""
+
     CRITICAL = "critical"  # System cannot continue
-    ERROR = "error"        # Operation failed, user action required
-    WARNING = "warning"    # Operation succeeded with issues
-    INFO = "info"         # Informational, no action required
+    ERROR = "error"  # Operation failed, user action required
+    WARNING = "warning"  # Operation succeeded with issues
+    INFO = "info"  # Informational, no action required
 
 
 class ErrorCode(str, Enum):
@@ -116,6 +118,7 @@ class ErrorCode(str, Enum):
 @dataclass(frozen=True)
 class ErrorDefinition:
     """Definition of a specific error with all its metadata"""
+
     code: ErrorCode
     category: ErrorCategory
     severity: ErrorSeverity
@@ -139,251 +142,299 @@ class ErrorRegistry:
         """Initialize all error definitions"""
 
         # Validation Errors
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL001,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Required Field Missing",
-            message_template="Required field '{field}' is missing from {section}",
-            suggested_fix="Add the required field to your data",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL001,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Required Field Missing",
+                message_template="Required field '{field}' is missing from {section}",
+                suggested_fix="Add the required field to your data",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL002,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid Field Type",
-            message_template="Field '{field}' must be of type {expected_type}, got {actual_type}",
-            suggested_fix="Change the field to the correct data type",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL002,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid Field Type",
+                message_template="Field '{field}' must be of type {expected_type}, got {actual_type}",
+                suggested_fix="Change the field to the correct data type",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL003,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid Email Format",
-            message_template="Email '{email}' is not in valid format",
-            suggested_fix="Use format like 'user@domain.com'",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL003,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid Email Format",
+                message_template="Email '{email}' is not in valid format",
+                suggested_fix="Use format like 'user@domain.com'",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL004,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.WARNING,
-            title="Invalid Phone Format",
-            message_template="Phone number '{phone}' could not be normalized",
-            suggested_fix="Use format like '(555) 123-4567' or '+1 (555) 123-4567'",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL004,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.WARNING,
+                title="Invalid Phone Format",
+                message_template="Phone number '{phone}' could not be normalized",
+                suggested_fix="Use format like '(555) 123-4567' or '+1 (555) 123-4567'",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL005,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.WARNING,
-            title="Invalid URL Format",
-            message_template="URL '{url}' is not in valid format",
-            suggested_fix="Use format like 'https://domain.com'",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL005,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.WARNING,
+                title="Invalid URL Format",
+                message_template="URL '{url}' is not in valid format",
+                suggested_fix="Use format like 'https://domain.com'",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL006,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid Date Format",
-            message_template="Date '{date}' is not in valid format",
-            suggested_fix="Use format like 'YYYY-MM' or 'YYYY-MM-DD'",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL006,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid Date Format",
+                message_template="Date '{date}' is not in valid format",
+                suggested_fix="Use format like 'YYYY-MM' or 'YYYY-MM-DD'",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL012,
-            category=ErrorCategory.SECURITY,
-            severity=ErrorSeverity.CRITICAL,
-            title="LaTeX Injection Detected",
-            message_template="Dangerous LaTeX command detected in field '{field}': {command}",
-            suggested_fix="Remove unsafe LaTeX commands from your input",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL012,
+                category=ErrorCategory.SECURITY,
+                severity=ErrorSeverity.CRITICAL,
+                title="LaTeX Injection Detected",
+                message_template="Dangerous LaTeX command detected in field '{field}': {command}",
+                suggested_fix="Remove unsafe LaTeX commands from your input",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL013,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid JSON Structure",
-            message_template="JSON parsing failed: {details}",
-            suggested_fix="Check JSON syntax and structure",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL013,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid JSON Structure",
+                message_template="JSON parsing failed: {details}",
+                suggested_fix="Check JSON syntax and structure",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.VAL014,
-            category=ErrorCategory.VALIDATION,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid YAML Structure",
-            message_template="YAML parsing failed: {details}",
-            suggested_fix="Check YAML syntax and indentation",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.VAL014,
+                category=ErrorCategory.VALIDATION,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid YAML Structure",
+                message_template="YAML parsing failed: {details}",
+                suggested_fix="Check YAML syntax and indentation",
+                http_status_code=400,
+            )
+        )
 
         # Template Errors
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL001,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="Template Not Found",
-            message_template="Template '{template}' not found for document type '{document_type}'",
-            suggested_fix="Use one of the available templates: {available_templates}",
-            http_status_code=404
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL001,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="Template Not Found",
+                message_template="Template '{template}' not found for document type '{document_type}'",
+                suggested_fix="Use one of the available templates: {available_templates}",
+                http_status_code=404,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL002,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="Template Compilation Failed",
-            message_template="Failed to compile template '{template}': {details}",
-            suggested_fix="Check template syntax and dependencies",
-            http_status_code=500
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL002,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="Template Compilation Failed",
+                message_template="Failed to compile template '{template}': {details}",
+                suggested_fix="Check template syntax and dependencies",
+                http_status_code=500,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL003,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="Template Rendering Failed",
-            message_template="Failed to render template '{template}': {details}",
-            suggested_fix="Check data compatibility with template requirements",
-            http_status_code=500
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL003,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="Template Rendering Failed",
+                message_template="Failed to render template '{template}': {details}",
+                suggested_fix="Check data compatibility with template requirements",
+                http_status_code=500,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL005,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="Template Class Not Found",
-            message_template="Template class not found in {module_path}",
-            suggested_fix="Ensure template helper.py contains a valid template class",
-            http_status_code=500
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL005,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="Template Class Not Found",
+                message_template="Template class not found in {module_path}",
+                suggested_fix="Ensure template helper.py contains a valid template class",
+                http_status_code=500,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL007,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="LaTeX Compilation Failed",
-            message_template="LaTeX compilation failed: {details}",
-            suggested_fix="Ensure pdflatex is installed and template is valid",
-            http_status_code=500
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL007,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="LaTeX Compilation Failed",
+                message_template="LaTeX compilation failed: {details}",
+                suggested_fix="Ensure pdflatex is installed and template is valid",
+                http_status_code=500,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.TPL008,
-            category=ErrorCategory.TEMPLATE,
-            severity=ErrorSeverity.ERROR,
-            title="PDF Generation Failed",
-            message_template="Failed to generate PDF output: {details}",
-            suggested_fix="Check LaTeX compilation logs for errors",
-            http_status_code=500
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.TPL008,
+                category=ErrorCategory.TEMPLATE,
+                severity=ErrorSeverity.ERROR,
+                title="PDF Generation Failed",
+                message_template="Failed to generate PDF output: {details}",
+                suggested_fix="Check LaTeX compilation logs for errors",
+                http_status_code=500,
+            )
+        )
 
         # API Errors
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.API001,
-            category=ErrorCategory.API,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid Request Format",
-            message_template="Request format is invalid: {details}",
-            suggested_fix="Check API documentation for correct request format",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.API001,
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid Request Format",
+                message_template="Request format is invalid: {details}",
+                suggested_fix="Check API documentation for correct request format",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.API002,
-            category=ErrorCategory.API,
-            severity=ErrorSeverity.ERROR,
-            title="Missing Request Parameter",
-            message_template="Required parameter '{parameter}' is missing",
-            suggested_fix="Include all required parameters in your request",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.API002,
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.ERROR,
+                title="Missing Request Parameter",
+                message_template="Required parameter '{parameter}' is missing",
+                suggested_fix="Include all required parameters in your request",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.API003,
-            category=ErrorCategory.API,
-            severity=ErrorSeverity.ERROR,
-            title="Invalid Request Parameter",
-            message_template="Parameter '{parameter}' has invalid value: {value}",
-            suggested_fix="Check parameter format and allowed values",
-            http_status_code=400
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.API003,
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.ERROR,
+                title="Invalid Request Parameter",
+                message_template="Parameter '{parameter}' has invalid value: {value}",
+                suggested_fix="Check parameter format and allowed values",
+                http_status_code=400,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.API011,
-            category=ErrorCategory.API,
-            severity=ErrorSeverity.ERROR,
-            title="Resource Not Found",
-            message_template="Requested resource '{resource}' not found",
-            suggested_fix="Check the resource path and ensure it exists",
-            http_status_code=404
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.API011,
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.ERROR,
+                title="Resource Not Found",
+                message_template="Requested resource '{resource}' not found",
+                suggested_fix="Check the resource path and ensure it exists",
+                http_status_code=404,
+            )
+        )
 
         # System Errors
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.SYS001,
-            category=ErrorCategory.SYSTEM,
-            severity=ErrorSeverity.CRITICAL,
-            title="Internal Server Error",
-            message_template="An unexpected error occurred: {details}",
-            suggested_fix="Try again later or contact support if the problem persists",
-            http_status_code=500,
-            user_facing=False
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.SYS001,
+                category=ErrorCategory.SYSTEM,
+                severity=ErrorSeverity.CRITICAL,
+                title="Internal Server Error",
+                message_template="An unexpected error occurred: {details}",
+                suggested_fix="Try again later or contact support if the problem persists",
+                http_status_code=500,
+                user_facing=False,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.SYS006,
-            category=ErrorCategory.SYSTEM,
-            severity=ErrorSeverity.CRITICAL,
-            title="Dependency Not Found",
-            message_template="Required dependency '{dependency}' not found",
-            suggested_fix="Ensure all system dependencies are installed",
-            http_status_code=500,
-            user_facing=False
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.SYS006,
+                category=ErrorCategory.SYSTEM,
+                severity=ErrorSeverity.CRITICAL,
+                title="Dependency Not Found",
+                message_template="Required dependency '{dependency}' not found",
+                suggested_fix="Ensure all system dependencies are installed",
+                http_status_code=500,
+                user_facing=False,
+            )
+        )
 
         # File Operation Errors
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.FIL001,
-            category=ErrorCategory.FILE,
-            severity=ErrorSeverity.ERROR,
-            title="File Not Found",
-            message_template="File not found: {file_path}",
-            suggested_fix="Check file path and ensure file exists",
-            http_status_code=404
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.FIL001,
+                category=ErrorCategory.FILE,
+                severity=ErrorSeverity.ERROR,
+                title="File Not Found",
+                message_template="File not found: {file_path}",
+                suggested_fix="Check file path and ensure file exists",
+                http_status_code=404,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.FIL002,
-            category=ErrorCategory.FILE,
-            severity=ErrorSeverity.ERROR,
-            title="File Permission Denied",
-            message_template="Permission denied accessing file: {file_path}",
-            suggested_fix="Check file permissions",
-            http_status_code=403
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.FIL002,
+                category=ErrorCategory.FILE,
+                severity=ErrorSeverity.ERROR,
+                title="File Permission Denied",
+                message_template="Permission denied accessing file: {file_path}",
+                suggested_fix="Check file permissions",
+                http_status_code=403,
+            )
+        )
 
-        self._register_error(ErrorDefinition(
-            code=ErrorCode.FIL003,
-            category=ErrorCategory.FILE,
-            severity=ErrorSeverity.ERROR,
-            title="Insufficient Disk Space",
-            message_template="Insufficient disk space for operation",
-            suggested_fix="Free up disk space and try again",
-            http_status_code=507
-        ))
+        self._register_error(
+            ErrorDefinition(
+                code=ErrorCode.FIL003,
+                category=ErrorCategory.FILE,
+                severity=ErrorSeverity.ERROR,
+                title="Insufficient Disk Space",
+                message_template="Insufficient disk space for operation",
+                suggested_fix="Free up disk space and try again",
+                http_status_code=507,
+            )
+        )
 
     def _register_error(self, error_def: ErrorDefinition):
         """Register an error definition"""

@@ -44,7 +44,7 @@ class TemplateEditing:
             raise TemplateNotFoundException(
                 template_name=template_name,
                 document_type=template_category,
-                available_templates=available_templates
+                available_templates=available_templates,
             )
 
     def generate_document(self):

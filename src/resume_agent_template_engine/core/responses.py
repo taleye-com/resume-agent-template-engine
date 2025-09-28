@@ -15,6 +15,7 @@ from .exceptions import ResumeCompilerException
 @dataclass
 class ErrorResponse:
     """Standardized error response structure"""
+
     code: str
     category: str
     severity: str
@@ -28,7 +29,7 @@ class ErrorResponse:
     documentation_url: Optional[str] = None
 
     @classmethod
-    def from_exception(cls, exception: ResumeCompilerException) -> 'ErrorResponse':
+    def from_exception(cls, exception: ResumeCompilerException) -> "ErrorResponse":
         """Create ErrorResponse from ResumeCompilerException"""
         return cls(
             code=exception.error_code.value,
@@ -39,18 +40,15 @@ class ErrorResponse:
             request_id=exception.request_id,
             timestamp=exception.timestamp.isoformat() + "Z",
             suggested_fix=exception.suggested_fix,
-            field=getattr(exception, 'field_path', None),
+            field=getattr(exception, "field_path", None),
             context=exception.context if exception.context else None,
-            documentation_url=exception.error_def.documentation_url
+            documentation_url=exception.error_def.documentation_url,
         )
 
     @classmethod
     def from_error_code(
-        cls,
-        code: ErrorCode,
-        request_id: Optional[str] = None,
-        **context
-    ) -> 'ErrorResponse':
+        cls, code: ErrorCode, request_id: Optional[str] = None, **context
+    ) -> "ErrorResponse":
         """Create ErrorResponse from error code and context"""
         from .errors import error_registry, get_error_definition
 
@@ -58,6 +56,7 @@ class ErrorResponse:
         if not error_def:
             # This is an internal error - system has invalid error code
             from .exceptions import InternalServerException
+
             raise InternalServerException(details=f"Unknown error code: {code}")
 
         formatted_message = error_registry.format_message(code, **context)
@@ -72,7 +71,7 @@ class ErrorResponse:
             timestamp=datetime.utcnow().isoformat() + "Z",
             suggested_fix=error_def.suggested_fix,
             context=context if context else None,
-            documentation_url=error_def.documentation_url
+            documentation_url=error_def.documentation_url,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -85,7 +84,7 @@ class ErrorResponse:
                 "title": self.title,
                 "message": self.message,
                 "request_id": self.request_id,
-                "timestamp": self.timestamp
+                "timestamp": self.timestamp,
             }
         }
 
@@ -108,6 +107,7 @@ class ErrorResponse:
 @dataclass
 class ValidationErrorDetail:
     """Detailed validation error information"""
+
     code: str
     category: str
     severity: str
@@ -121,6 +121,7 @@ class ValidationErrorDetail:
 @dataclass
 class ValidationResponse:
     """Response for validation operations"""
+
     is_valid: bool
     request_id: str
     timestamp: str
@@ -135,8 +136,8 @@ class ValidationResponse:
         normalized_data: Optional[Dict[str, Any]] = None,
         warnings: Optional[List[ValidationErrorDetail]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
-    ) -> 'ValidationResponse':
+        request_id: Optional[str] = None,
+    ) -> "ValidationResponse":
         """Create a successful validation response"""
         return cls(
             is_valid=True,
@@ -145,7 +146,7 @@ class ValidationResponse:
             errors=[],
             warnings=warnings or [],
             normalized_data=normalized_data,
-            metadata=metadata
+            metadata=metadata,
         )
 
     @classmethod
@@ -154,8 +155,8 @@ class ValidationResponse:
         errors: List[ValidationErrorDetail],
         warnings: Optional[List[ValidationErrorDetail]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
-    ) -> 'ValidationResponse':
+        request_id: Optional[str] = None,
+    ) -> "ValidationResponse":
         """Create a failed validation response"""
         return cls(
             is_valid=False,
@@ -164,7 +165,7 @@ class ValidationResponse:
             errors=errors,
             warnings=warnings or [],
             normalized_data=None,
-            metadata=metadata
+            metadata=metadata,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -174,7 +175,9 @@ class ValidationResponse:
             "request_id": self.request_id,
             "timestamp": self.timestamp,
             "errors": [self._error_detail_to_dict(error) for error in self.errors],
-            "warnings": [self._error_detail_to_dict(warning) for warning in self.warnings]
+            "warnings": [
+                self._error_detail_to_dict(warning) for warning in self.warnings
+            ],
         }
 
         if self.normalized_data is not None:
@@ -193,7 +196,7 @@ class ValidationResponse:
             "category": detail.category,
             "severity": detail.severity,
             "field": detail.field,
-            "message": detail.message
+            "message": detail.message,
         }
 
         if detail.suggested_fix:
@@ -211,6 +214,7 @@ class ValidationResponse:
 @dataclass
 class SuccessResponse:
     """Standardized success response structure"""
+
     message: str
     request_id: str
     timestamp: str
@@ -223,15 +227,15 @@ class SuccessResponse:
         message: str,
         data: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
-    ) -> 'SuccessResponse':
+        request_id: Optional[str] = None,
+    ) -> "SuccessResponse":
         """Create a success response"""
         return cls(
             message=message,
             request_id=request_id or str(uuid.uuid4())[:8],
             timestamp=datetime.utcnow().isoformat() + "Z",
             data=data,
-            metadata=metadata
+            metadata=metadata,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -240,7 +244,7 @@ class SuccessResponse:
             "success": True,
             "message": self.message,
             "request_id": self.request_id,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
         if self.data:
@@ -259,7 +263,7 @@ class ResponseFormatter:
     def format_error_response(
         exception: Union[ResumeCompilerException, Exception],
         request_id: Optional[str] = None,
-        include_debug_info: bool = False
+        include_debug_info: bool = False,
     ) -> Dict[str, Any]:
         """Format an exception into a standardized error response"""
 
@@ -268,10 +272,9 @@ class ResponseFormatter:
         else:
             # Handle unexpected exceptions
             from .errors import ErrorCode
+
             error_response = ErrorResponse.from_error_code(
-                ErrorCode.SYS001,
-                request_id=request_id,
-                details=str(exception)
+                ErrorCode.SYS001, request_id=request_id, details=str(exception)
             )
 
         result = error_response.to_dict()
@@ -281,7 +284,11 @@ class ResponseFormatter:
             if not exception.is_user_facing:
                 result["debug"] = {
                     "exception_type": type(exception).__name__,
-                    "original_exception": str(exception.original_exception) if exception.original_exception else None
+                    "original_exception": (
+                        str(exception.original_exception)
+                        if exception.original_exception
+                        else None
+                    ),
                 }
 
         return result
@@ -289,7 +296,7 @@ class ResponseFormatter:
     @staticmethod
     def format_validation_response(
         validation_result,  # ValidationResult from validation.py
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Format validation result into standardized response"""
 
@@ -299,27 +306,27 @@ class ResponseFormatter:
 
         for error in validation_result.errors:
             detail = ValidationErrorDetail(
-                code=getattr(error, 'error_code', 'VAL999'),  # Fallback code
-                category='validation',
+                code=getattr(error, "error_code", "VAL999"),  # Fallback code
+                category="validation",
                 severity=error.severity,
                 field=error.field_path,
                 message=error.message,
                 suggested_fix=error.suggested_fix,
                 original_value=error.original_value,
-                corrected_value=error.corrected_value
+                corrected_value=error.corrected_value,
             )
             errors.append(detail)
 
         for warning in validation_result.warnings:
             detail = ValidationErrorDetail(
-                code=getattr(warning, 'error_code', 'VAL999'),  # Fallback code
-                category='validation',
+                code=getattr(warning, "error_code", "VAL999"),  # Fallback code
+                category="validation",
                 severity=warning.severity,
                 field=warning.field_path,
                 message=warning.message,
                 suggested_fix=warning.suggested_fix,
                 original_value=warning.original_value,
-                corrected_value=warning.corrected_value
+                corrected_value=warning.corrected_value,
             )
             warnings.append(detail)
 
@@ -328,14 +335,14 @@ class ResponseFormatter:
                 normalized_data=validation_result.normalized_data,
                 warnings=warnings,
                 metadata=validation_result.metadata,
-                request_id=request_id
+                request_id=request_id,
             )
         else:
             response = ValidationResponse.create_failure(
                 errors=errors,
                 warnings=warnings,
                 metadata=validation_result.metadata,
-                request_id=request_id
+                request_id=request_id,
             )
 
         return response.to_dict()
@@ -345,19 +352,18 @@ class ResponseFormatter:
         message: str,
         data: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Format a success response"""
         response = SuccessResponse.create(
-            message=message,
-            data=data,
-            metadata=metadata,
-            request_id=request_id
+            message=message, data=data, metadata=metadata, request_id=request_id
         )
         return response.to_dict()
 
     @staticmethod
-    def get_http_status_code(exception: Union[ResumeCompilerException, Exception]) -> int:
+    def get_http_status_code(
+        exception: Union[ResumeCompilerException, Exception],
+    ) -> int:
         """Get appropriate HTTP status code for an exception"""
         if isinstance(exception, ResumeCompilerException):
             return exception.http_status_code
@@ -368,16 +374,13 @@ class ResponseFormatter:
 
 # Convenience functions for common response patterns
 
+
 def create_error_response(
-    error_code: ErrorCode,
-    request_id: Optional[str] = None,
-    **context
+    error_code: ErrorCode, request_id: Optional[str] = None, **context
 ) -> Dict[str, Any]:
     """Create an error response from error code"""
     error_response = ErrorResponse.from_error_code(
-        error_code,
-        request_id=request_id,
-        **context
+        error_code, request_id=request_id, **context
     )
     return error_response.to_dict()
 
@@ -387,7 +390,7 @@ def create_validation_error_response(
     message: str,
     error_code: str = "VAL999",
     suggested_fix: Optional[str] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create a validation error response"""
     error_detail = ValidationErrorDetail(
@@ -396,12 +399,11 @@ def create_validation_error_response(
         severity="error",
         field=field,
         message=message,
-        suggested_fix=suggested_fix
+        suggested_fix=suggested_fix,
     )
 
     response = ValidationResponse.create_failure(
-        errors=[error_detail],
-        request_id=request_id
+        errors=[error_detail], request_id=request_id
     )
 
     return response.to_dict()
@@ -410,11 +412,9 @@ def create_validation_error_response(
 def create_success_response(
     message: str,
     data: Optional[Dict[str, Any]] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create a success response"""
     return ResponseFormatter.format_success_response(
-        message=message,
-        data=data,
-        request_id=request_id
+        message=message, data=data, request_id=request_id
     )

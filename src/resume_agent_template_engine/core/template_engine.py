@@ -12,7 +12,7 @@ from .exceptions import (
     TemplateNotFoundException,
     TemplateCompilationException,
     TemplateRenderingException,
-    InternalServerException
+    InternalServerException,
 )
 
 logger = logging.getLogger(__name__)
@@ -197,14 +197,14 @@ class TemplateRegistry:
             raise TemplateNotFoundException(
                 template_name="",
                 document_type=document_type,
-                available_templates=list(self._available_templates.keys())
+                available_templates=list(self._available_templates.keys()),
             )
 
         if template_name not in self._available_templates[document_type]:
             raise TemplateNotFoundException(
                 template_name=template_name,
                 document_type=document_type,
-                available_templates=self._available_templates[document_type]
+                available_templates=self._available_templates[document_type],
             )
 
         # Load the template class
@@ -254,7 +254,7 @@ class TemplateRegistry:
 
         raise TemplateCompilationException(
             template_name=template_name,
-            details=f"No template class found in {module.__name__}"
+            details=f"No template class found in {module.__name__}",
         )
 
 
@@ -339,7 +339,7 @@ class TemplateEngine:
             raise TemplateNotFoundException(
                 template_name=template_name,
                 document_type=document_type,
-                available_templates=available
+                available_templates=available,
             )
 
         # Load template class
@@ -381,7 +381,7 @@ class TemplateEngine:
         else:
             raise TemplateRenderingException(
                 template_name=template_name,
-                details=f"Unsupported output format: {output_format}"
+                details=f"Unsupported output format: {output_format}",
             )
 
     def export_to_pdf(
@@ -424,7 +424,7 @@ class TemplateEngine:
             raise TemplateNotFoundException(
                 template_name=template_name,
                 document_type=document_type,
-                available_templates=available
+                available_templates=available,
             )
 
         template_class = self.registry.load_template_class(document_type, template_name)

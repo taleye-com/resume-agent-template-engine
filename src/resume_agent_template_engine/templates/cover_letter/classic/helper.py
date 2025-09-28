@@ -15,7 +15,7 @@ from resume_agent_template_engine.core.exceptions import (
     TemplateRenderingException,
     LaTeXCompilationException,
     PDFGenerationException,
-    DependencyException
+    DependencyException,
 )
 
 
@@ -46,20 +46,19 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 self.template = f.read()
         except FileNotFoundError as e:
             raise FileNotFoundException(
-                file_path=self.template_path,
-                context={"details": str(e)}
+                file_path=self.template_path, context={"details": str(e)}
             ) from e
         except PermissionError as e:
             raise FileSystemException(
                 error_code=ErrorCode.FIL002,
                 file_path=self.template_path,
-                context={"details": str(e)}
+                context={"details": str(e)},
             ) from e
         except Exception as e:
             raise FileSystemException(
                 error_code=ErrorCode.FIL006,
                 file_path=self.template_path,
-                context={"details": f"Error reading template file: {e}"}
+                context={"details": f"Error reading template file: {e}"},
             ) from e
 
     def validate_data(self):
@@ -76,7 +75,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 raise ValidationException(
                     error_code=ErrorCode.VAL001,
                     field_path=section,
-                    context={"section": "cover letter data"}
+                    context={"section": "cover letter data"},
                 )
 
     def _validate_personal_info(self):
@@ -87,7 +86,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 raise ValidationException(
                     error_code=ErrorCode.VAL001,
                     field_path=f"personalInfo.{field}",
-                    context={"section": "personalInfo"}
+                    context={"section": "personalInfo"},
                 )
 
     def _validate_document_specific_fields(self):
@@ -97,7 +96,10 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             raise ValidationException(
                 error_code=ErrorCode.VAL002,
                 field_path="recipient",
-                context={"expected_type": "dict", "actual_type": type(self.data["recipient"]).__name__}
+                context={
+                    "expected_type": "dict",
+                    "actual_type": type(self.data["recipient"]).__name__,
+                },
             )
 
         # Body can be either string or list of paragraphs
@@ -105,7 +107,10 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             raise ValidationException(
                 error_code=ErrorCode.VAL002,
                 field_path="body",
-                context={"expected_type": "string or list", "actual_type": type(self.data["body"]).__name__}
+                context={
+                    "expected_type": "string or list",
+                    "actual_type": type(self.data["body"]).__name__,
+                },
             )
 
     def replace_special_chars(self, data):
@@ -123,7 +128,13 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             return {k: self.replace_special_chars(v) for k, v in data.items()}
         return data
 
-    def get_field_with_fallback(self, obj: dict, primary_field: str, fallback_fields: List[str] = None, default_value: Any = None):
+    def get_field_with_fallback(
+        self,
+        obj: dict,
+        primary_field: str,
+        fallback_fields: List[str] = None,
+        default_value: Any = None,
+    ):
         """Get field with fallback options and default value"""
         if primary_field in obj and obj[primary_field]:
             return obj[primary_field]
@@ -135,26 +146,34 @@ class ClassicCoverLetterTemplate(TemplateInterface):
 
         return default_value
 
-    def get_field_with_smart_default(self, path: str, default_value: Any = None, smart_default_fn=None):
+    def get_field_with_smart_default(
+        self, path: str, default_value: Any = None, smart_default_fn=None
+    ):
         """Get field with smart defaults"""
-        keys = path.split('.')
+        keys = path.split(".")
         obj = self.data
 
         try:
             for key in keys:
                 obj = obj[key]
-            return obj if obj else (smart_default_fn() if smart_default_fn else default_value)
+            return (
+                obj
+                if obj
+                else (smart_default_fn() if smart_default_fn else default_value)
+            )
         except (KeyError, TypeError):
             return smart_default_fn() if smart_default_fn else default_value
 
-    def generate_section_with_header(self, section_name: str, content_generator_fn, header_name: str = None):
+    def generate_section_with_header(
+        self, section_name: str, content_generator_fn, header_name: str = None
+    ):
         """Generate section with conditional header"""
         content = content_generator_fn()
         if content:
-            header = header_name or section_name.replace('_', ' ').title()
+            header = header_name or section_name.replace("_", " ").title()
             return f"\\section{{{header}}}\n{content}"
         return ""
-    
+
     def generate_personal_info(self) -> str:
         """
         Generate the header block dynamically from self.data['personalInfo'].
@@ -174,30 +193,59 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             parts.append(r"\mbox{ " + info["location"] + r" }")
 
         # Email is required, so always add it
-        parts.append(r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}")
+        parts.append(
+            r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}"
+        )
 
         # Only add phone if it exists
         if info.get("phone"):
-            parts.append(r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}")
+            parts.append(
+                r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}"
+            )
 
         # Add optional social links only if both URL and display text exist
         if info.get("website") and info.get("website_display"):
-            parts.append(r"\mbox{\href{" + info["website"] + r"}{" + info["website_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["website"]
+                + r"}{"
+                + info["website_display"]
+                + r"}}"
+            )
         if info.get("linkedin") and info.get("linkedin_display"):
-            parts.append(r"\mbox{\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["linkedin"]
+                + r"}{"
+                + info["linkedin_display"]
+                + r"}}"
+            )
         if info.get("github") and info.get("github_display"):
-            parts.append(r"\mbox{\href{" + info["github"] + r"}{" + info["github_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["github"]
+                + r"}{"
+                + info["github_display"]
+                + r"}}"
+            )
         if info.get("twitter") and info.get("twitter_display"):
-            parts.append(r"\mbox{\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{"
+                + info["twitter"]
+                + r"}{"
+                + info["twitter_display"]
+                + r"}}"
+            )
         if info.get("x") and info.get("x_display"):
-            parts.append(r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}")
+            parts.append(
+                r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}"
+            )
 
         # Join them with the \AND separators exactly as before
         contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
         header_lines.append(r"    " + contact_line)
         header_lines.append(r"\end{header}")
         return "\n".join(header_lines)
-
 
     def generate_recipient_address(self):
         """Format recipient information with LaTeX line breaks."""
@@ -231,11 +279,16 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         if recipient.get("street"):
             address_components.append(recipient["street"])
         if recipient.get("city") or recipient.get("state") or recipient.get("zip"):
-            city_state_zip = ", ".join(filter(None, [
-                recipient.get("city"),
-                recipient.get("state"),
-                recipient.get("zip")
-            ]))
+            city_state_zip = ", ".join(
+                filter(
+                    None,
+                    [
+                        recipient.get("city"),
+                        recipient.get("state"),
+                        recipient.get("zip"),
+                    ],
+                )
+            )
             if city_state_zip:
                 address_components.append(city_state_zip)
         if recipient.get("country"):
@@ -326,7 +379,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             unreplaced_matches = re.findall(r"{{(.*?)}}", cover_letter)
             raise TemplateRenderingException(
                 template_name="classic",
-                details=f"Unreplaced placeholders detected: {', '.join(unreplaced_matches)}"
+                details=f"Unreplaced placeholders detected: {', '.join(unreplaced_matches)}",
             )
 
         return cover_letter
@@ -357,7 +410,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
             "/usr/local/texlive/2025basic/bin/universal-darwin",
             "/usr/local/texlive/2024/bin/universal-darwin",
             "/usr/local/bin",
-            "/opt/homebrew/bin"
+            "/opt/homebrew/bin",
         ]
 
         current_path = env.get("PATH", "")
@@ -400,16 +453,16 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 raise LaTeXCompilationException(
                     details="PDF compilation failed. Ensure pdflatex is installed.",
                     template_name="classic",
-                    context={"return_code": e.returncode}
+                    context={"return_code": e.returncode},
                 ) from e
             except FileNotFoundError as e:
                 raise DependencyException(
                     dependency="pdflatex",
                     context={
                         "details": "pdflatex not found. Please install BasicTeX or MacTeX:\n"
-                                  "brew install --cask basictex\n"
-                                  "Then restart your terminal or run: eval \"$(/usr/libexec/path_helper)\""
-                    }
+                        "brew install --cask basictex\n"
+                        'Then restart your terminal or run: eval "$(/usr/libexec/path_helper)"'
+                    },
                 ) from e
 
             pdf_path = os.path.join(tmpdir, "temp.pdf")
@@ -417,8 +470,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 os.replace(pdf_path, output_path)
             else:
                 raise PDFGenerationException(
-                    details="PDF output not generated",
-                    template_name="classic"
+                    details="PDF output not generated", template_name="classic"
                 )
 
         return output_path

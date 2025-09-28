@@ -7,7 +7,7 @@ from resume_agent_template_engine.core.exceptions import (
     FileSystemException,
     FileNotFoundException,
     TemplateNotFoundException,
-    TemplateException
+    TemplateException,
 )
 
 
@@ -51,7 +51,7 @@ class TemplateManager:
         if not os.path.exists(self.templates_dir):
             raise FileNotFoundException(
                 file_path=self.templates_dir,
-                context={"details": "Templates directory not found"}
+                context={"details": "Templates directory not found"},
             )
 
         # Scan for template categories (resume, cover_letter, etc.)
@@ -114,7 +114,7 @@ class TemplateManager:
             raise TemplateNotFoundException(
                 template_name="",
                 document_type=category,
-                available_templates=available_categories
+                available_templates=available_categories,
             )
 
         if template_name not in self.available_templates[category]:
@@ -122,7 +122,7 @@ class TemplateManager:
             raise TemplateNotFoundException(
                 template_name=template_name,
                 document_type=category,
-                available_templates=available_templates
+                available_templates=available_templates,
             )
 
         # Construct the path to the helper.py file
@@ -178,8 +178,8 @@ class TemplateManager:
             document_type=category,
             context={
                 "module_path": helper_path,
-                "tried_classes": ', '.join(class_name_options)
-            }
+                "tried_classes": ", ".join(class_name_options),
+            },
         )
 
     def create_template(self, category, template_name, data):
