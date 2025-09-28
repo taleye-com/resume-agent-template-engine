@@ -14,15 +14,13 @@ from .exceptions import (
     TemplateRenderingException,
     InternalServerException,
 )
+from .template_registry import get_available_templates as registry_get_available_templates, DocumentType
+from .universal_template import UniversalTemplate
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentType(str, Enum):
-    """Supported document types"""
-
-    RESUME = "resume"
-    COVER_LETTER = "cover_letter"
+# DocumentType moved to template_registry.py to avoid circular imports
 
 
 class OutputFormat(str, Enum):
@@ -139,7 +137,11 @@ class TemplateConfig:
 
 
 class TemplateRegistry:
-    """Registry for discovering and managing templates"""
+    """
+    Registry for discovering and managing templates
+
+    Now uses central template registry instead of scanning for helper.py files
+    """
 
     def __init__(self, templates_base_path: str = "templates"):
         """
@@ -150,44 +152,21 @@ class TemplateRegistry:
         """
         self.templates_base_path = Path(templates_base_path)
         self._template_cache = {}
-        self._discover_templates()
-
-    def _discover_templates(self) -> None:
-        """Discover available templates by scanning directories"""
-        self._available_templates = {}
-
-        if not self.templates_base_path.exists():
-            logger.warning(f"Templates directory not found: {self.templates_base_path}")
-            return
-
-        for doc_type_dir in self.templates_base_path.iterdir():
-            if not doc_type_dir.is_dir() or doc_type_dir.name.startswith("__"):
-                continue
-
-            doc_type = doc_type_dir.name
-            self._available_templates[doc_type] = []
-
-            for template_dir in doc_type_dir.iterdir():
-                if not template_dir.is_dir() or template_dir.name.startswith("__"):
-                    continue
-
-                # Check if template has required files
-                helper_file = template_dir / "helper.py"
-                tex_files = list(template_dir.glob("*.tex"))
-
-                if helper_file.exists() and tex_files:
-                    self._available_templates[doc_type].append(template_dir.name)
+        # Use central registry instead of discovery
+        self._available_templates = registry_get_available_templates()
 
     def get_available_templates(
         self, document_type: Optional[str] = None
     ) -> Union[Dict[str, List[str]], List[str]]:
-        """Get available templates, optionally filtered by document type"""
+        """Get available templates from central registry"""
         if document_type:
             return self._available_templates.get(document_type, [])
         return self._available_templates
 
     def load_template_class(self, document_type: str, template_name: str) -> type:
-        """Load template class dynamically"""
+        """
+        Load template class - now returns UniversalTemplate instead of helper classes
+        """
         cache_key = f"{document_type}_{template_name}"
 
         if cache_key in self._template_cache:
@@ -207,55 +186,13 @@ class TemplateRegistry:
                 available_templates=self._available_templates[document_type],
             )
 
-        # Load the template class
-        helper_path = (
-            self.templates_base_path / document_type / template_name / "helper.py"
-        )
+        # Return a factory function that creates UniversalTemplate instances
+        def template_factory(data: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
+            return UniversalTemplate(document_type, template_name, data, config)
 
-        spec = importlib.util.spec_from_file_location(
-            f"{document_type}_{template_name}", helper_path
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Find template class in module
-        template_class = self._find_template_class(module, document_type, template_name)
-
-        # Cache the class
-        self._template_cache[cache_key] = template_class
-        return template_class
-
-    def _find_template_class(
-        self, module, document_type: str, template_name: str
-    ) -> type:
-        """Find the template class in the loaded module"""
-        # Generate possible class names
-        doc_type_camel = "".join(x.capitalize() for x in document_type.split("_"))
-        template_camel = template_name.capitalize()
-
-        possible_names = [
-            f"{template_camel}{doc_type_camel}Template",
-            f"{doc_type_camel}{template_camel}Template",
-            f"{template_camel}Template",
-        ]
-
-        for class_name in possible_names:
-            if hasattr(module, class_name):
-                return getattr(module, class_name)
-
-        # Fallback: find any class ending with 'Template'
-        template_classes = [
-            name
-            for name in dir(module)
-            if name.endswith("Template") and not name.startswith("_")
-        ]
-        if template_classes:
-            return getattr(module, template_classes[0])
-
-        raise TemplateCompilationException(
-            template_name=template_name,
-            details=f"No template class found in {module.__name__}",
-        )
+        # Cache the factory
+        self._template_cache[cache_key] = template_factory
+        return template_factory
 
 
 class TemplateEngine:
@@ -342,14 +279,14 @@ class TemplateEngine:
                 available_templates=available,
             )
 
-        # Load template class
-        template_class = self.registry.load_template_class(document_type, template_name)
+        # Load template factory
+        template_factory = self.registry.load_template_class(document_type, template_name)
 
         # Get template-specific configuration
         template_config = self.config.get_template_config(document_type, template_name)
 
-        # Create instance
-        return template_class(data, template_config)
+        # Create instance using factory
+        return template_factory(data, template_config)
 
     def render_document(
         self,
@@ -427,12 +364,14 @@ class TemplateEngine:
                 available_templates=available,
             )
 
-        template_class = self.registry.load_template_class(document_type, template_name)
+        template_factory = self.registry.load_template_class(document_type, template_name)
 
         # Create a dummy instance to get metadata
         try:
             temp_data = {"personalInfo": {"name": "Test", "email": "test@example.com"}}
-            template_instance = template_class(temp_data)
+            if document_type == "cover_letter":
+                temp_data["body"] = "Test body"
+            template_instance = template_factory(temp_data)
             required_fields = template_instance.required_fields
         except Exception:
             required_fields = []
@@ -453,6 +392,6 @@ class TemplateEngine:
             "required_fields": required_fields,
             "preview_path": preview_path,
             "template_dir": str(template_dir),
-            "class_name": template_class.__name__,
+            "class_name": "UniversalTemplate",
             "description": f"{template_name.capitalize()} template for {document_type.replace('_', ' ')}",
         }

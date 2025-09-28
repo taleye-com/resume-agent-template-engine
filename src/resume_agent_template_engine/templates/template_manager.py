@@ -72,11 +72,10 @@ class TemplateManager:
                 if not os.path.isdir(template_path) or template_name.startswith("__"):
                     continue
 
-                # Verify it has a helper.py file and a .tex file
-                helper_path = os.path.join(template_path, "helper.py")
+                # Verify it has a .tex file (no longer need helper.py)
                 tex_files = [f for f in os.listdir(template_path) if f.endswith(".tex")]
 
-                if os.path.exists(helper_path) and tex_files:
+                if tex_files:
                     templates[category].append(template_name)
 
         return templates
