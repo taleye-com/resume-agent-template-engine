@@ -40,4 +40,4 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
 # Run the application
-CMD ["python", "run.py"] 
+CMD ["python", "run.py", "--api"] 
