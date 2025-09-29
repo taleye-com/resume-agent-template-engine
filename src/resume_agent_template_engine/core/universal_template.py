@@ -12,13 +12,12 @@ import subprocess
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from .template_engine import TemplateInterface
+from .base import TemplateInterface, DocumentType
 from .template_registry import (
     TemplateDefinition,
     SectionDefinition,
     FieldMapping,
     SectionType,
-    DocumentType,
     get_template_definition
 )
 from .errors import ErrorCode

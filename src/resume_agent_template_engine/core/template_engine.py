@@ -1,6 +1,5 @@
 import os
 import yaml
-from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 import importlib.util
@@ -14,13 +13,14 @@ from .exceptions import (
     TemplateRenderingException,
     InternalServerException,
 )
-from .template_registry import get_available_templates as registry_get_available_templates, DocumentType
+from .base import TemplateInterface, DocumentType
+from .template_registry import get_available_templates as registry_get_available_templates
 from .universal_template import UniversalTemplate
 
 logger = logging.getLogger(__name__)
 
 
-# DocumentType moved to template_registry.py to avoid circular imports
+# TemplateInterface and DocumentType moved to base.py to avoid circular imports
 
 
 class OutputFormat(str, Enum):
@@ -29,49 +29,6 @@ class OutputFormat(str, Enum):
     PDF = "pdf"
     LATEX = "latex"
     HTML = "html"
-
-
-class TemplateInterface(ABC):
-    """Abstract base class for all templates"""
-
-    def __init__(self, data: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
-        """
-        Initialize template with data and configuration
-
-        Args:
-            data: Document data
-            config: Template-specific configuration
-        """
-        self.data = data
-        self.config = config or {}
-        self.validate_data()
-
-    @abstractmethod
-    def validate_data(self) -> None:
-        """Validate that required data fields are present"""
-        pass
-
-    @abstractmethod
-    def render(self) -> str:
-        """Render the template to LaTeX/HTML content"""
-        pass
-
-    @abstractmethod
-    def export_to_pdf(self, output_path: str) -> str:
-        """Export the rendered content to PDF"""
-        pass
-
-    @property
-    @abstractmethod
-    def required_fields(self) -> List[str]:
-        """List of required data fields for this template"""
-        pass
-
-    @property
-    @abstractmethod
-    def template_type(self) -> DocumentType:
-        """The document type this template handles"""
-        pass
 
 
 class TemplateConfig:

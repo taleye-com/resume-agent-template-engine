@@ -7,9 +7,9 @@ import json
 import yaml
 from resume_agent_template_engine.core.template_engine import (
     TemplateEngine,
-    DocumentType,
     OutputFormat,
 )
+from resume_agent_template_engine.core.base import DocumentType
 from resume_agent_template_engine.core.validation import (
     validate_resume_data as enhanced_validate_resume_data,
     ValidationLevel,
@@ -116,7 +116,7 @@ async def root():
     return {"message": "Welcome to Resume Agent Template Engine"}
 
 
-# DocumentType enum is now imported from template_engine
+# DocumentType enum is now imported from base module
 
 
 class PersonalInfo(BaseModel):

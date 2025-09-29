@@ -8,13 +8,7 @@ template registry that defines all templates through configuration.
 from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime
 from enum import Enum
-
-
-class DocumentType(str, Enum):
-    """Supported document types"""
-
-    RESUME = "resume"
-    COVER_LETTER = "cover_letter"
+from .base import DocumentType
 
 
 class SectionType(str, Enum):

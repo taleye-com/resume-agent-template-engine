@@ -17,9 +17,9 @@ import logging
 
 from resume_agent_template_engine.core.template_engine import (
     TemplateEngine,
-    DocumentType,
     OutputFormat,
 )
+from resume_agent_template_engine.core.base import DocumentType
 
 
 def setup_logging(level: str = "INFO"):
