@@ -25,6 +25,7 @@ from resume_agent_template_engine.core.exceptions import (
     MissingParameterException,
     InvalidParameterException,
     InternalServerException,
+    ResourceNotFoundException,
 )
 from resume_agent_template_engine.core.responses import (
     ResponseFormatter,
@@ -39,13 +40,44 @@ from fastapi.responses import RedirectResponse
 import re
 from datetime import datetime
 import logging
+from .schema_generator import SchemaGenerator
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Resume and Cover Letter Template Engine API",
-    description="API for generating professional resumes and cover letters from JSON or YAML data using customizable templates",
-    version="1.0.0",
+    description="""
+    **Professional Document Generation API**
+
+    Generate high-quality resumes and cover letters from structured JSON or YAML data using customizable LaTeX templates.
+
+    ## Features
+    - **Multiple Document Types**: Resume and cover letter generation
+    - **Professional Templates**: LaTeX-based templates for high-quality output
+    - **Flexible Input**: Support for both JSON and YAML data formats
+    - **Comprehensive Validation**: Built-in data validation and sanitization
+    - **Rich Schema Support**: Detailed schemas with examples for all document types
+
+    ## Quick Start
+    1. Get the schema for your document type: `GET /schema/{document_type}`
+    2. Validate your data (optional): `POST /validate`
+    3. Generate your document: `POST /generate`
+
+    ## Supported Document Types
+    - `resume`: Professional resume generation
+    - `cover_letter`: Professional cover letter generation
+
+    ## Available Templates
+    - `classic`: Clean, professional template suitable for all industries
+    """,
+    version="2.0.0",
+    contact={
+        "name": "Resume Agent Template Engine",
+        "url": "https://github.com/taleye-com/resume-agent-template-engine"
+    },
+    license_info={
+        "name": "MIT License"
+    }
 )
 
 # Add CORS middleware
@@ -111,41 +143,357 @@ async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content=response_data)
 
 
-@app.get("/")
+@app.get("/", tags=["General"])
 async def root():
-    return {"message": "Welcome to Resume Agent Template Engine"}
+    """Welcome endpoint with API information."""
+    return {
+        "message": "Welcome to Resume Agent Template Engine API",
+        "version": "2.0.0",
+        "documentation": "/docs",
+        "health_check": "/health",
+        "available_endpoints": {
+            "schemas": "/schema/{document_type}",
+            "templates": "/templates",
+            "generation": "/generate",
+            "validation": "/validate"
+        }
+    }
 
 
 # DocumentType enum is now imported from base module
 
 
-class PersonalInfo(BaseModel):
+# Comprehensive Pydantic Models based on Template Registry
+
+class PersonalInfoModel(BaseModel):
+    """Personal information model with all supported fields"""
     name: str
     email: EmailStr
     phone: Optional[str] = None
     location: Optional[str] = None
     website: Optional[str] = None
     linkedin: Optional[str] = None
+    github: Optional[str] = None
+    twitter: Optional[str] = None
+    x: Optional[str] = None
     website_display: Optional[str] = None
     linkedin_display: Optional[str] = None
+    github_display: Optional[str] = None
+    twitter_display: Optional[str] = None
+    x_display: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "John Doe",
+                "email": "john@example.com",
+                "phone": "+1 (555) 123-4567",
+                "location": "New York, NY",
+                "website": "https://johndoe.dev",
+                "linkedin": "https://linkedin.com/in/johndoe",
+                "website_display": "johndoe.dev",
+                "linkedin_display": "linkedin.com/in/johndoe"
+            }
+        }
+
+
+class ExperienceModel(BaseModel):
+    """Work experience model"""
+    position: str
+    company: str
+    location: Optional[str] = None
+    startDate: str  # YYYY-MM or YYYY-MM-DD format
+    endDate: Optional[str] = "Present"  # YYYY-MM, YYYY-MM-DD, or "Present"
+    description: Optional[str] = None
+    achievements: Optional[List[str]] = None
+    technologies: Optional[List[str]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "position": "Senior Software Engineer",
+                "company": "Tech Corp",
+                "location": "New York, NY",
+                "startDate": "2020-01",
+                "endDate": "Present",
+                "description": "Lead development of cloud-native applications",
+                "achievements": [
+                    "Reduced system latency by 40%",
+                    "Led team of 5 engineers"
+                ]
+            }
+        }
+
+
+class EducationModel(BaseModel):
+    """Education model"""
+    degree: str
+    institution: str
+    location: Optional[str] = None
+    graduationDate: Optional[str] = None  # YYYY-MM or YYYY-MM-DD
+    gpa: Optional[str] = None
+    coursework: Optional[List[str]] = None
+    honors: Optional[List[str]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "degree": "Bachelor of Science in Computer Science",
+                "institution": "University of Technology",
+                "graduationDate": "2019-05",
+                "gpa": "3.8/4.0"
+            }
+        }
+
+
+class ProjectModel(BaseModel):
+    """Project model"""
+    name: str
+    description: str
+    technologies: Optional[List[str]] = None
+    url: Optional[str] = None
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    achievements: Optional[List[str]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "E-commerce Platform",
+                "description": "Built a full-stack e-commerce platform using React and Node.js",
+                "technologies": ["React", "Node.js", "PostgreSQL"],
+                "url": "https://github.com/johndoe/ecommerce"
+            }
+        }
+
+
+class SkillsModel(BaseModel):
+    """Skills model"""
+    technical: Optional[List[str]] = None
+    soft: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    frameworks: Optional[List[str]] = None
+    tools: Optional[List[str]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "technical": ["Python", "JavaScript", "React", "AWS"],
+                "soft": ["Leadership", "Communication", "Problem Solving"],
+                "languages": ["English", "Spanish"],
+                "frameworks": ["Django", "React", "Vue.js"]
+            }
+        }
+
+
+class CertificationModel(BaseModel):
+    """Certification model"""
+    name: str
+    issuer: str
+    date: Optional[str] = None
+    expiry: Optional[str] = None
+    credential_id: Optional[str] = None
+    url: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "AWS Certified Solutions Architect",
+                "issuer": "Amazon Web Services",
+                "date": "2023-06",
+                "expiry": "2026-06"
+            }
+        }
+
+
+class PublicationModel(BaseModel):
+    """Publication model"""
+    title: str
+    authors: List[str]
+    venue: str
+    date: str
+    url: Optional[str] = None
+    doi: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "title": "Machine Learning in Production Systems",
+                "authors": ["John Doe", "Jane Smith"],
+                "venue": "Journal of Software Engineering",
+                "date": "2023-12"
+            }
+        }
+
+
+class RecipientModel(BaseModel):
+    """Cover letter recipient model"""
+    name: Optional[str] = None
+    title: Optional[str] = None
+    company: Optional[str] = None
+    department: Optional[str] = None
+    address: Optional[Union[str, List[str]]] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    country: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "Jane Smith",
+                "title": "Hiring Manager",
+                "company": "Innovative Tech Solutions",
+                "street": "123 Business Ave",
+                "city": "San Francisco",
+                "state": "CA",
+                "zip": "94105"
+            }
+        }
+
+
+class ResumeDataModel(BaseModel):
+    """Complete resume data model"""
+    personalInfo: PersonalInfoModel
+    professionalSummary: Optional[str] = None
+    experience: Optional[List[ExperienceModel]] = None
+    education: Optional[List[EducationModel]] = None
+    projects: Optional[List[ProjectModel]] = None
+    skills: Optional[SkillsModel] = None
+    certifications: Optional[List[CertificationModel]] = None
+    publications: Optional[List[PublicationModel]] = None
+    achievements: Optional[List[str]] = None
+    awards: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    interests: Optional[List[str]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "personalInfo": {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "+1 (555) 123-4567",
+                    "location": "New York, NY"
+                },
+                "professionalSummary": "Experienced software engineer with 5+ years of expertise in full-stack development.",
+                "experience": [
+                    {
+                        "position": "Senior Software Engineer",
+                        "company": "Tech Corp",
+                        "location": "New York, NY",
+                        "startDate": "2020-01",
+                        "endDate": "Present",
+                        "description": "Lead development of cloud-native applications",
+                        "achievements": [
+                            "Reduced system latency by 40%",
+                            "Led team of 5 engineers"
+                        ]
+                    }
+                ]
+            }
+        }
+
+
+class CoverLetterDataModel(BaseModel):
+    """Complete cover letter data model"""
+    personalInfo: PersonalInfoModel
+    recipient: Optional[RecipientModel] = None
+    date: Optional[str] = None
+    salutation: Optional[str] = None
+    body: Union[str, List[str]]
+    closing: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "personalInfo": {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "+1 (555) 123-4567",
+                    "location": "New York, NY"
+                },
+                "recipient": {
+                    "name": "Jane Smith",
+                    "title": "Hiring Manager",
+                    "company": "Innovative Tech Solutions"
+                },
+                "body": [
+                    "I am writing to express my strong interest in the Software Engineer position at your company.",
+                    "My experience in full-stack development and passion for innovation align perfectly with your requirements."
+                ]
+            }
+        }
 
 
 class DocumentRequest(BaseModel):
+    """Document generation request with comprehensive data validation"""
     document_type: DocumentType
     template: str
     format: str = "pdf"
-    data: Dict[str, Any]
+    data: Union[ResumeDataModel, CoverLetterDataModel, Dict[str, Any]]
     clean_up: bool = True
-    ultra_validation: bool = False  # Optional enhanced validation
+    ultra_validation: bool = False
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "document_type": "resume",
+                "template": "classic",
+                "format": "pdf",
+                "data": {
+                    "personalInfo": {
+                        "name": "John Doe",
+                        "email": "john@example.com",
+                        "phone": "+1 (555) 123-4567",
+                        "location": "New York, NY"
+                    },
+                    "professionalSummary": "Experienced software engineer with 5+ years of expertise."
+                }
+            }
+        }
 
 
 class YAMLDocumentRequest(BaseModel):
+    """YAML-based document generation request"""
     document_type: DocumentType
     template: str
     format: str = "pdf"
     yaml_data: str
     clean_up: bool = True
-    ultra_validation: bool = False  # Optional enhanced validation
+    ultra_validation: bool = False
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "document_type": "resume",
+                "template": "classic",
+                "format": "pdf",
+                "yaml_data": "personalInfo:\n  name: John Doe\n  email: john@example.com\nprofessionalSummary: Experienced software engineer..."
+            }
+        }
+
+
+class ValidationRequest(BaseModel):
+    """Request model for data validation"""
+    document_type: DocumentType
+    data: Union[ResumeDataModel, CoverLetterDataModel, Dict[str, Any]]
+    validation_level: str = "standard"  # "standard" or "ultra"
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "document_type": "resume",
+                "data": {
+                    "personalInfo": {
+                        "name": "John Doe",
+                        "email": "john@example.com"
+                    }
+                },
+                "validation_level": "standard"
+            }
+        }
 
 
 def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
@@ -180,7 +528,7 @@ def validate_resume_data(data: Dict[str, Any]):
         )
 
     try:
-        personal_info = PersonalInfo(**data["personalInfo"])
+        personal_info = PersonalInfoModel(**data["personalInfo"])
     except Exception as e:
         raise ValidationException(
             ErrorCode.VAL002, field_path="personalInfo", context={"details": str(e)}
@@ -243,19 +591,102 @@ def ultra_validate_and_normalize_data(data: Dict[str, Any]) -> Dict[str, Any]:
     return result.normalized_data
 
 
-@app.post("/generate")
+@app.post("/validate", tags=["Validation"])
+async def validate_document_data(request: ValidationRequest):
+    """
+    Validate document data against the template requirements without generating the document.
+
+    This endpoint helps you verify that your data structure is correct before attempting
+    to generate a document. It supports both standard validation and ultra validation
+    with enhanced sanitization.
+
+    **Parameters:**
+    - `document_type`: Type of document (resume or cover_letter)
+    - `data`: Document data to validate
+    - `validation_level`: "standard" for basic validation, "ultra" for enhanced validation
+
+    **Returns:**
+    - Validation results with details about any issues found
+    - Suggestions for fixing validation errors
+    - Confirmation if data is valid for document generation
+    """
+    try:
+        # Convert data to dict for validation
+        data_dict = request.data if isinstance(request.data, dict) else request.data.dict()
+
+        if request.validation_level == "ultra":
+            try:
+                normalized_data = ultra_validate_and_normalize_data(data_dict)
+                return {
+                    "valid": True,
+                    "validation_level": "ultra",
+                    "message": "Data successfully validated with ultra validation",
+                    "data_summary": {
+                        "document_type": request.document_type,
+                        "sections_found": list(normalized_data.keys()),
+                        "personal_info_complete": "personalInfo" in normalized_data and "name" in normalized_data.get("personalInfo", {}) and "email" in normalized_data.get("personalInfo", {}),
+                    }
+                }
+            except ValidationException as e:
+                return {
+                    "valid": False,
+                    "validation_level": "ultra",
+                    "errors": [str(e)],
+                    "message": "Ultra validation failed. See errors for details.",
+                    "suggestions": ["Fix the validation errors listed above", "Consider using standard validation if ultra validation is too strict"]
+                }
+        else:
+            try:
+                validate_resume_data(data_dict)
+                return {
+                    "valid": True,
+                    "validation_level": "standard",
+                    "message": "Data successfully validated with standard validation",
+                    "data_summary": {
+                        "document_type": request.document_type,
+                        "sections_found": list(data_dict.keys()),
+                        "personal_info_complete": "personalInfo" in data_dict and "name" in data_dict.get("personalInfo", {}) and "email" in data_dict.get("personalInfo", {}),
+                    }
+                }
+            except ValidationException as e:
+                return {
+                    "valid": False,
+                    "validation_level": "standard",
+                    "errors": [str(e)],
+                    "message": "Standard validation failed. See errors for details.",
+                    "suggestions": ["Fix the validation errors listed above", "Ensure personalInfo section includes name and email"]
+                }
+
+    except Exception as e:
+        raise InternalServerException(details=f"Validation error: {str(e)}")
+
+
+@app.post("/generate", tags=["Document Generation"])
 async def generate_document(
     request: DocumentRequest, background_tasks: BackgroundTasks
 ):
     """
-    Generate a resume or cover letter from the provided JSON data using the specified template.
+    **Generate a professional resume or cover letter PDF document**
 
-    Args:
-        request: DocumentRequest object containing document type, template choice, format, and data
-        background_tasks: BackgroundTasks object to add cleanup tasks
+    This endpoint creates a high-quality PDF document from your structured data using LaTeX templates.
+    The generated document will be professionally formatted and ready for use.
 
-    Returns:
-        FileResponse containing the generated document
+    **Request Parameters:**
+    - `document_type`: Document type ("resume" or "cover_letter")
+    - `template`: Template name (currently supports "classic")
+    - `format`: Output format (currently only "pdf" is supported)
+    - `data`: Complete document data (use /schema/{document_type} to see the expected structure)
+    - `clean_up`: Whether to automatically delete the generated file after serving (default: true)
+    - `ultra_validation`: Enable enhanced validation and sanitization (default: false)
+
+    **Response:**
+    - Returns a PDF file as binary data with appropriate headers
+    - Filename is automatically generated based on document type and person's name
+
+    **Tips:**
+    - Use `/validate` endpoint first to check your data
+    - Get the complete data schema from `/schema/{document_type}`
+    - Enable ultra_validation for enhanced security and data sanitization
     """
     try:
         # Choose validation method based on request
@@ -300,9 +731,9 @@ async def generate_document(
             output_path = tmp_file.name
 
         try:
-            # Generate the document using normalized data
+            # Generate the document using the validated data
             engine.export_to_pdf(
-                request.document_type, request.template, normalized_data, output_path
+                request.document_type, request.template, data_to_use, output_path
             )
 
             # Determine filename based on document type
@@ -336,19 +767,28 @@ async def generate_document(
         raise InternalServerException(details=str(e))
 
 
-@app.post("/generate-yaml")
+@app.post("/generate-yaml", tags=["Document Generation"])
 async def generate_document_from_yaml(
     request: YAMLDocumentRequest, background_tasks: BackgroundTasks
 ):
     """
-    Generate a resume or cover letter from the provided YAML data using the specified template.
+    **Generate a professional document from YAML data**
 
-    Args:
-        request: YAMLDocumentRequest object containing document type, template choice, format, and YAML data
-        background_tasks: BackgroundTasks object to add cleanup tasks
+    Alternative to the JSON endpoint for users who prefer YAML format.
+    Accepts the same data structure but in YAML format.
 
-    Returns:
-        FileResponse containing the generated document
+    **Request Parameters:**
+    - `document_type`: Document type ("resume" or "cover_letter")
+    - `template`: Template name (currently supports "classic")
+    - `format`: Output format (currently only "pdf" is supported)
+    - `yaml_data`: Complete document data in YAML format
+    - `clean_up`: Whether to automatically delete the generated file after serving
+    - `ultra_validation`: Enable enhanced validation and sanitization
+
+    **Tips:**
+    - Get YAML examples from `/schema-yaml/{document_type}`
+    - YAML format is more human-readable than JSON
+    - Supports the same data structure as the JSON endpoint
     """
     try:
         # Parse YAML data
@@ -432,9 +872,18 @@ async def generate_document_from_yaml(
         raise InternalServerException(details=str(e))
 
 
-@app.get("/templates")
+@app.get("/templates", tags=["Templates"])
 async def list_templates():
-    """List all available templates by document type."""
+    """
+    **Get all available templates organized by document type**
+
+    Returns a complete list of all templates available in the system,
+    organized by document type (resume, cover_letter).
+
+    **Response:**
+    - Dictionary with document types as keys
+    - Each document type contains an array of available template names
+    """
     try:
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
@@ -446,9 +895,19 @@ async def list_templates():
         raise InternalServerException(details=str(e))
 
 
-@app.get("/templates/{document_type}")
+@app.get("/templates/{document_type}", tags=["Templates"])
 async def list_templates_by_type(document_type: DocumentType):
-    """List all available templates for a specific document type."""
+    """
+    **Get available templates for a specific document type**
+
+    Returns all templates available for the specified document type.
+
+    **Parameters:**
+    - `document_type`: The type of document ("resume" or "cover_letter")
+
+    **Response:**
+    - Array of template names available for the specified document type
+    """
     try:
         engine = TemplateEngine()
         available_templates = engine.get_available_templates(document_type)
@@ -462,9 +921,23 @@ async def list_templates_by_type(document_type: DocumentType):
         raise InternalServerException(details=str(e))
 
 
-@app.get("/template-info/{document_type}/{template_name}")
+@app.get("/template-info/{document_type}/{template_name}", tags=["Templates"])
 async def get_template_info(document_type: DocumentType, template_name: str):
-    """Get detailed information about a specific template."""
+    """
+    **Get detailed information about a specific template**
+
+    Provides comprehensive information about a template including
+    required fields, preview information, and template metadata.
+
+    **Parameters:**
+    - `document_type`: The type of document ("resume" or "cover_letter")
+    - `template_name`: The name of the template (e.g., "classic")
+
+    **Response:**
+    - Template metadata and requirements
+    - Required data fields
+    - Preview information if available
+    """
     try:
         engine = TemplateEngine()
         template_info = engine.get_template_info(document_type, template_name)
@@ -486,138 +959,42 @@ async def get_template_info(document_type: DocumentType, template_name: str):
         raise InternalServerException(details=str(e))
 
 
-@app.get("/schema/{document_type}")
+@app.get("/schema/{document_type}", tags=["Schema"])
 async def get_document_schema(document_type: DocumentType):
-    """Get the expected JSON schema for a specific document type."""
+    """
+    **Get comprehensive JSON schema and examples for a document type**
+
+    Returns the complete data structure specification including all supported
+    fields, validation rules, and realistic examples for the specified document type.
+
+    **Parameters:**
+    - `document_type`: The type of document ("resume" or "cover_letter")
+
+    **Response:**
+    - Complete JSON schema with field descriptions
+    - Realistic JSON example with all major sections
+    - YAML example for reference
+    - Field validation requirements
+
+    **Usage:**
+    Use this schema to understand exactly what data structure is expected
+    for successful document generation.
+    """
     try:
-        if document_type == DocumentType.RESUME:
-            return {
-                "schema": {
-                    "type": "object",
-                    "required": ["personalInfo"],
-                    "properties": {
-                        "personalInfo": {
-                            "type": "object",
-                            "required": ["name", "email"],
-                            "properties": {
-                                "name": {"type": "string"},
-                                "email": {"type": "string"},
-                                "phone": {"type": "string"},
-                                "location": {"type": "string"},
-                                "website": {"type": "string"},
-                                "linkedin": {"type": "string"},
-                                "website_display": {"type": "string"},
-                                "linkedin_display": {"type": "string"},
-                            },
-                        }
-                    },
-                },
-                "json_example": {
-                    "personalInfo": {"name": "John Doe", "email": "john@example.com"}
-                },
-                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com",
-            }
-        else:
-            return {
-                "schema": {
-                    "type": "object",
-                    "required": ["personalInfo", "content"],
-                    "properties": {
-                        "personalInfo": {
-                            "type": "object",
-                            "required": ["name", "email"],
-                            "properties": {
-                                "name": {"type": "string"},
-                                "email": {"type": "string"},
-                            },
-                        },
-                        "content": {"type": "string"},
-                    },
-                },
-                "json_example": {
-                    "personalInfo": {"name": "John Doe", "email": "john@example.com"},
-                    "content": "Dear Hiring Manager,...",
-                },
-                "yaml_example": "personalInfo:\n  name: John Doe\n  email: john@example.com\ncontent: Dear Hiring Manager,...",
-            }
-    except ResumeCompilerException:
-        # Re-raise our custom exceptions as-is
-        raise
-    except Exception as e:
-        raise InternalServerException(details=str(e))
-
-
-@app.get("/schema-yaml/{document_type}")
-async def get_document_schema_yaml(document_type: DocumentType):
-    """Get example YAML format for a specific document type."""
-    try:
-        if document_type == DocumentType.RESUME:
-            example_data = {
-                "personalInfo": {
-                    "name": "John Doe",
-                    "email": "john@example.com",
-                    "phone": "+1 (555) 123-4567",
-                    "location": "New York, NY",
-                    "website": "https://johndoe.dev",
-                    "linkedin": "https://linkedin.com/in/johndoe",
-                    "website_display": "https://johndoe.dev",
-                    "linkedin_display": "https://linkedin.com/in/johndoe",
-                },
-                "professionalSummary": "Experienced software engineer with 5+ years of expertise in full-stack development.",
-                "experience": [
-                    {
-                        "position": "Senior Software Engineer",
-                        "company": "Tech Corp",
-                        "startDate": "2020-01",
-                        "endDate": "Present",
-                        "location": "New York, NY",
-                        "description": "Lead development of cloud-native applications",
-                        "achievements": [
-                            "Reduced system latency by 40%",
-                            "Led team of 5 engineers",
-                        ],
-                    }
-                ],
-                "education": [
-                    {
-                        "degree": "Bachelor of Science in Computer Science",
-                        "institution": "University of Technology",
-                        "graduationDate": "2019-05",
-                        "gpa": "3.8/4.0",
-                    }
-                ],
-                "skills": {
-                    "technical": ["Python", "JavaScript", "React", "AWS"],
-                    "soft": ["Leadership", "Communication"],
-                },
-            }
-        else:
-            example_data = {
-                "personalInfo": {
-                    "name": "John Doe",
-                    "email": "john@example.com",
-                    "phone": "+1 (555) 123-4567",
-                    "location": "New York, NY",
-                },
-                "recipient": {
-                    "name": "Jane Smith",
-                    "title": "Hiring Manager",
-                    "company": "Innovative Tech Solutions",
-                },
-                "date": "March 15, 2024",
-                "salutation": "Dear Ms. Smith,",
-                "body": [
-                    "I am writing to express my strong interest in the position.",
-                    "My experience aligns perfectly with your requirements.",
-                ],
-                "closing": "Sincerely,\nJohn Doe",
-            }
-
-        yaml_content = yaml.dump(example_data, default_flow_style=False, indent=2)
+        schema_info = SchemaGenerator.get_schema_for_document_type(document_type)
         return {
-            "yaml_example": yaml_content,
-            "description": f"Example YAML format for {document_type} generation",
+            "document_type": document_type,
+            "schema": schema_info["schema"],
+            "json_example": schema_info["json_example"],
+            "yaml_example": schema_info["yaml_example"],
+            "description": f"Complete schema and examples for {document_type.replace('_', ' ')} generation"
         }
+    except ValueError as e:
+        raise InvalidParameterException(
+            parameter="document_type",
+            value=document_type,
+            context={"error": str(e)}
+        )
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is
         raise
@@ -625,9 +1002,71 @@ async def get_document_schema_yaml(document_type: DocumentType):
         raise InternalServerException(details=str(e))
 
 
-@app.get("/health")
+@app.get("/schema-yaml/{document_type}", tags=["Schema"])
+async def get_document_schema_yaml(document_type: DocumentType):
+    """
+    **Get comprehensive YAML examples and usage notes**
+
+    Returns detailed YAML examples with all supported fields and
+    usage guidelines for the specified document type.
+
+    **Parameters:**
+    - `document_type`: The type of document ("resume" or "cover_letter")
+
+    **Response:**
+    - Complete YAML example with all sections
+    - JSON equivalent for comparison
+    - Usage notes and formatting guidelines
+    - Information about required vs optional fields
+
+    **Perfect for:**
+    - Users who prefer YAML over JSON
+    - Understanding the complete data structure
+    - Copy-paste templates for quick setup
+    """
+    try:
+        schema_info = SchemaGenerator.get_schema_for_document_type(document_type)
+        return {
+            "document_type": document_type,
+            "yaml_example": schema_info["yaml_example"],
+            "json_example": schema_info["json_example"],
+            "description": f"Comprehensive YAML example for {document_type.replace('_', ' ')} generation with all supported fields",
+            "usage_notes": {
+                "required_fields": ["personalInfo"],
+                "optional_sections": [
+                    "All sections except personalInfo are optional",
+                    "Include only the sections relevant to your document",
+                    "Arrays can be empty or omitted entirely"
+                ],
+                "date_format": "Use YYYY-MM or YYYY-MM-DD format for dates",
+                "body_format": "For cover letters, body can be a string or array of paragraphs"
+            }
+        }
+    except ValueError as e:
+        raise InvalidParameterException(
+            parameter="document_type",
+            value=document_type,
+            context={"error": str(e)}
+        )
+    except ResumeCompilerException:
+        # Re-raise our custom exceptions as-is
+        raise
+    except Exception as e:
+        raise InternalServerException(details=str(e))
+
+
+@app.get("/health", tags=["General"])
 async def health_check():
-    """Health check endpoint."""
+    """
+    **API health check endpoint**
+
+    Simple endpoint to verify that the API is running and responsive.
+    Used for monitoring and load balancer health checks.
+
+    **Response:**
+    - Status confirmation
+    - Can be used for uptime monitoring
+    """
     return {"status": "healthy"}
 
 
