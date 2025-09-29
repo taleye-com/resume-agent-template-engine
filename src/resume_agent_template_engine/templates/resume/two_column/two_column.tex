@@ -1,0 +1,200 @@
+\documentclass[10pt, letterpaper]{article}
+
+% ------------------------------------------------------------------------------
+% PACKAGES AND CONFIGURATIONS
+% ------------------------------------------------------------------------------
+\usepackage[
+    ignoreheadfoot,
+    top=0.8cm,
+    bottom=0.8cm,
+    left=0.8cm,
+    right=0.8cm,
+    footskip=0.5cm
+]{geometry}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{primaryColor}{RGB}{0, 79, 144}
+\definecolor{accentColor}{RGB}{240, 240, 240}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{amsmath}
+\usepackage[
+    pdftitle={Resume},
+    pdfauthor={Resume Author},
+    pdfcreator={Resume Agent},
+    colorlinks=true,
+    urlcolor=primaryColor
+]{hyperref}
+\usepackage[pscoord]{eso-pic}
+\usepackage{calc}
+\usepackage{bookmark}
+\usepackage{lastpage}
+\usepackage{changepage}
+\usepackage{paracol}
+\usepackage{ifthen}
+\usepackage{needspace}
+\usepackage{iftex}
+
+% Ensure generated PDF is ATS parsable:
+\ifPDFTeX
+  \input{glyphtounicode}
+  \pdfgentounicode=1
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{lmodern}
+\fi
+
+\usepackage{charter}
+
+\raggedright
+\pagestyle{empty}
+
+% ------------------------------------------------------------------------------
+% COLORS AND STYLING
+% ------------------------------------------------------------------------------
+\definecolor{sidebarColor}{RGB}{45, 55, 72}
+\definecolor{sidebarText}{RGB}{255, 255, 255}
+\definecolor{mainText}{RGB}{45, 55, 72}
+
+% ------------------------------------------------------------------------------
+% CUSTOM ENVIRONMENTS AND COMMANDS
+% ------------------------------------------------------------------------------
+
+% Header environment
+\newenvironment{header}{
+    \setlength{\topsep}{0pt}\par\kern\topsep\centering\linespread{1.5}
+}{
+    \par\kern\topsep
+}
+
+% Two column environment
+\newenvironment{twocolumnresume}{
+    \columnratio{0.35,0.65}
+    \setlength{\columnsep}{0.02\textwidth}
+    \begin{paracol}{2}
+}{
+    \end{paracol}
+}
+
+% Sidebar section
+\newenvironment{sidebar}{
+    \switchcolumn[0]
+    \color{sidebarText}
+    \raggedright
+}{
+}
+
+% Main content section
+\newenvironment{maincontent}{
+    \switchcolumn[1]
+    \color{mainText}
+    \raggedright
+}{
+}
+
+% Sidebar section title
+\newcommand{\sidebarsection}[1]{
+    \vspace{0.3cm}
+    {\large\bfseries\MakeUppercase{#1}}
+    \vspace{0.2cm}
+    \hrule
+    \vspace{0.3cm}
+}
+
+% Main section title
+\newcommand{\mainsection}[1]{
+    \vspace{0.4cm}
+    {\Large\bfseries\color{primaryColor}\MakeUppercase{#1}}
+    \vspace{0.1cm}
+    \hrule height 2pt
+    \vspace{0.3cm}
+}
+
+% Sidebar item
+\newcommand{\sidebaritem}[2]{
+    \textbf{#1} \\
+    \small{#2} \\[0.3cm]
+}
+
+% Experience entry
+\newenvironment{experienceentry}[4]{
+    \textbf{#1} \hfill \textit{#2} \\
+    \textbf{#3} \hfill \textit{#4} \\
+    \vspace{0.1cm}
+    \begin{itemize}[leftmargin=*, itemsep=0.05cm]
+}{
+    \end{itemize}
+    \vspace{0.3cm}
+}
+
+% Education entry
+\newcommand{\educationentry}[4]{
+    \textbf{#1} \\
+    \textit{#2} \hfill \textit{#3} \\
+    \small{#4} \\[0.3cm]
+}
+
+% Skills list
+\newcommand{\skillslist}[1]{
+    \small{#1} \\[0.2cm]
+}
+
+% Contact item
+\newcommand{\contactitem}[2]{
+    \textbf{#1} \\
+    \small{#2} \\[0.2cm]
+}
+
+% AND separator
+\newcommand{\AND}{\,|\,}
+
+\begin{document}
+    %========================
+    % HEADER
+    %========================
+    {{personal_info}}
+    \vspace{0.3cm}
+
+    %========================
+    % TWO COLUMN LAYOUT
+    %========================
+    \begin{twocolumnresume}
+        %========================
+        % SIDEBAR (LEFT COLUMN)
+        %========================
+        \begin{sidebar}
+            \colorbox{sidebarColor}{
+                \begin{minipage}{\columnwidth}
+                    \vspace{0.3cm}
+
+                    {{sidebar_contact}}
+
+                    {{sidebar_skills}}
+
+                    {{sidebar_education}}
+
+                    {{sidebar_certifications}}
+
+                    \vspace{0.3cm}
+                \end{minipage}
+            }
+        \end{sidebar}
+
+        %========================
+        % MAIN CONTENT (RIGHT COLUMN)
+        %========================
+        \begin{maincontent}
+            {{professional_summary}}
+
+            {{experience}}
+
+            {{projects}}
+
+            {{achievements}}
+
+            {{publications}}
+        \end{maincontent}
+    \end{twocolumnresume}
+\end{document}
