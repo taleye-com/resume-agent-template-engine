@@ -496,6 +496,42 @@ class ValidationRequest(BaseModel):
         }
 
 
+def parse_pydantic_error(exception: Exception, field_prefix: str = "") -> Dict[str, Any]:
+    """Parse Pydantic validation errors to extract field, expected type, and actual type"""
+    error_str = str(exception)
+
+    # Try to extract field name and error type from Pydantic error
+    field_name = field_prefix
+    expected_type = "valid data"
+    actual_type = "invalid data"
+
+    # Common Pydantic error patterns
+    if "email" in error_str and "not a valid email" in error_str:
+        field_name = f"{field_prefix}.email" if field_prefix else "email"
+        expected_type = "valid email address"
+        actual_type = "invalid email format"
+    elif "field required" in error_str:
+        expected_type = "required field"
+        actual_type = "missing value"
+    elif "not a valid" in error_str:
+        if "string" in error_str:
+            expected_type = "string"
+            actual_type = "non-string value"
+        elif "integer" in error_str:
+            expected_type = "integer"
+            actual_type = "non-integer value"
+        elif "boolean" in error_str:
+            expected_type = "boolean"
+            actual_type = "non-boolean value"
+
+    return {
+        "field": field_name,
+        "expected_type": expected_type,
+        "actual_type": actual_type,
+        "details": error_str
+    }
+
+
 def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
     """Parse YAML content and return dictionary"""
     try:
@@ -530,8 +566,12 @@ def validate_resume_data(data: Dict[str, Any]):
     try:
         personal_info = PersonalInfoModel(**data["personalInfo"])
     except Exception as e:
+        # Parse the Pydantic validation error to provide better error messages
+        error_context = parse_pydantic_error(e, "personalInfo")
         raise ValidationException(
-            ErrorCode.VAL002, field_path="personalInfo", context={"details": str(e)}
+            ErrorCode.VAL002,
+            field_path=error_context["field"],
+            context=error_context
         )
 
     # Validate dates in experience
