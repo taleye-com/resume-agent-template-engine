@@ -1,8 +1,7 @@
 import subprocess
 import sys
-import os
-from threading import Thread
 import time
+from threading import Thread
 
 
 def run_streamlit():

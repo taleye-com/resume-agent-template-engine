@@ -6,8 +6,8 @@ throughout the template system to avoid circular imports.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
 from enum import Enum
+from typing import Any
 
 
 class DocumentType(str, Enum):
@@ -20,7 +20,7 @@ class DocumentType(str, Enum):
 class TemplateInterface(ABC):
     """Abstract base class for all templates"""
 
-    def __init__(self, data: Dict[str, Any], config: Dict[str, Any] = None):
+    def __init__(self, data: dict[str, Any], config: dict[str, Any] = None):
         """
         Initialize template with data and configuration
 
@@ -44,7 +44,7 @@ class TemplateInterface(ABC):
 
     @property
     @abstractmethod
-    def required_fields(self) -> List[str]:
+    def required_fields(self) -> list[str]:
         """List of required data fields for this template"""
         pass
 

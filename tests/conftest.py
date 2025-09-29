@@ -1,16 +1,16 @@
 """Pytest configuration and common fixtures for all tests."""
 
-import pytest
-import os
-import tempfile
 import shutil
-from pathlib import Path
-from typing import Dict, Any, Generator
-import json
-from unittest.mock import MagicMock, patch
 
 # Add the src directory to Python path for imports
 import sys
+import tempfile
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+from unittest.mock import patch
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
@@ -18,7 +18,6 @@ sys.path.insert(0, str(src_path))
 
 from resume_agent_template_engine.core.template_engine import (
     TemplateEngine,
-    DocumentType,
 )
 from resume_agent_template_engine.templates.template_manager import TemplateManager
 
@@ -46,7 +45,7 @@ def temp_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def sample_personal_info() -> Dict[str, Any]:
+def sample_personal_info() -> dict[str, Any]:
     """Sample personal information data."""
     return {
         "name": "John Doe",
@@ -61,7 +60,7 @@ def sample_personal_info() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_resume_data(sample_personal_info: Dict[str, Any]) -> Dict[str, Any]:
+def sample_resume_data(sample_personal_info: dict[str, Any]) -> dict[str, Any]:
     """Sample resume data for testing."""
     return {
         "personalInfo": sample_personal_info,
@@ -118,7 +117,7 @@ def sample_resume_data(sample_personal_info: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_cover_letter_data(sample_personal_info: Dict[str, Any]) -> Dict[str, Any]:
+def sample_cover_letter_data(sample_personal_info: dict[str, Any]) -> dict[str, Any]:
     """Sample cover letter data for testing."""
     return {
         "personalInfo": sample_personal_info,
@@ -171,19 +170,19 @@ class ClassicResumeTemplate(TemplateInterface):
         for field in required:
             if field not in self.data:
                 raise ValueError(f"Required field missing: {field}")
-    
+
     def render(self) -> str:
         return "\\\\documentclass{article}\\n\\\\begin{document}Test Resume\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path: str) -> str:
         with open(output_path, "wb") as f:
             f.write(b"Mock PDF content")
         return output_path
-    
+
     @property
     def required_fields(self) -> List[str]:
         return ["personalInfo"]
-    
+
     @property
     def template_type(self) -> DocumentType:
         return DocumentType.RESUME
@@ -206,19 +205,19 @@ class ClassicCoverLetterTemplate(TemplateInterface):
         for field in required:
             if field not in self.data:
                 raise ValueError(f"Required field missing: {field}")
-    
+
     def render(self) -> str:
         return "\\\\documentclass{letter}\\n\\\\begin{document}Test Cover Letter\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path: str) -> str:
         with open(output_path, "wb") as f:
             f.write(b"Mock PDF content")
         return output_path
-    
+
     @property
     def required_fields(self) -> List[str]:
         return ["personalInfo", "recipient"]
-    
+
     @property
     def template_type(self) -> DocumentType:
         return DocumentType.COVER_LETTER
@@ -234,6 +233,7 @@ class ClassicCoverLetterTemplate(TemplateInterface):
 def api_client():
     """Create a test client for the FastAPI application."""
     from fastapi.testclient import TestClient
+
     from resume_agent_template_engine.api.app import app
 
     return TestClient(app)
@@ -243,6 +243,7 @@ def api_client():
 def client():
     """Alias for api_client fixture for backward compatibility."""
     from fastapi.testclient import TestClient
+
     from resume_agent_template_engine.api.app import app
 
     return TestClient(app)
@@ -270,8 +271,10 @@ def mock_pdflatex():
 @pytest.fixture
 def mock_file_operations():
     """Mock file operations for testing."""
-    with patch("os.path.exists") as mock_exists, patch(
-        "os.makedirs"
-    ) as mock_makedirs, patch("shutil.copy2") as mock_copy:
+    with (
+        patch("os.path.exists") as mock_exists,
+        patch("os.makedirs") as mock_makedirs,
+        patch("shutil.copy2") as mock_copy,
+    ):
         mock_exists.return_value = True
         yield {"exists": mock_exists, "makedirs": mock_makedirs, "copy": mock_copy}

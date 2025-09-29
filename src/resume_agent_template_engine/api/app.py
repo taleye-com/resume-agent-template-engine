@@ -1,45 +1,41 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+import logging
+import os
+import tempfile
+from datetime import datetime
+from typing import Any, Optional, Union
+
+import uvicorn
+import yaml
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, EmailStr
-from typing import Dict, Any, Optional, List, Union, Tuple
-import os
-import json
-import yaml
-from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine,
-    OutputFormat,
-)
+
 from resume_agent_template_engine.core.base import DocumentType
-from resume_agent_template_engine.core.validation import (
-    validate_resume_data as enhanced_validate_resume_data,
-    ValidationLevel,
-    ValidationResult,
-    ValidationError,
-)
 from resume_agent_template_engine.core.errors import ErrorCode
 from resume_agent_template_engine.core.exceptions import (
-    ResumeCompilerException,
-    ValidationException,
-    TemplateNotFoundException,
-    InvalidRequestException,
-    MissingParameterException,
-    InvalidParameterException,
     InternalServerException,
+    InvalidParameterException,
+    InvalidRequestException,
     ResourceNotFoundException,
+    ResumeCompilerException,
+    TemplateNotFoundException,
+    ValidationException,
 )
 from resume_agent_template_engine.core.responses import (
     ResponseFormatter,
     create_error_response,
-    create_success_response,
 )
-import tempfile
-import uvicorn
-from enum import Enum
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-import re
-from datetime import datetime
-import logging
+from resume_agent_template_engine.core.template_engine import (
+    TemplateEngine,
+)
+from resume_agent_template_engine.core.validation import (
+    ValidationLevel,
+)
+from resume_agent_template_engine.core.validation import (
+    validate_resume_data as enhanced_validate_resume_data,
+)
+
 from .schema_generator import SchemaGenerator
 
 logger = logging.getLogger(__name__)
@@ -73,11 +69,9 @@ app = FastAPI(
     version="2.0.0",
     contact={
         "name": "Resume Agent Template Engine",
-        "url": "https://github.com/taleye-com/resume-agent-template-engine"
+        "url": "https://github.com/taleye-com/resume-agent-template-engine",
     },
-    license_info={
-        "name": "MIT License"
-    }
+    license_info={"name": "MIT License"},
 )
 
 # Add CORS middleware
@@ -137,7 +131,8 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
     response_data = ResponseFormatter.format_error_response(
-        internal_error, include_debug_info=False  # Set to True in development
+        internal_error,
+        include_debug_info=False,  # Set to True in development
     )
 
     return JSONResponse(status_code=500, content=response_data)
@@ -155,8 +150,8 @@ async def root():
             "schemas": "/schema/{document_type}",
             "templates": "/templates",
             "generation": "/generate",
-            "validation": "/validate"
-        }
+            "validation": "/validate",
+        },
     }
 
 
@@ -165,8 +160,10 @@ async def root():
 
 # Comprehensive Pydantic Models based on Template Registry
 
+
 class PersonalInfoModel(BaseModel):
     """Personal information model with all supported fields"""
+
     name: str
     email: EmailStr
     phone: Optional[str] = None
@@ -192,21 +189,22 @@ class PersonalInfoModel(BaseModel):
                 "website": "https://johndoe.dev",
                 "linkedin": "https://linkedin.com/in/johndoe",
                 "website_display": "johndoe.dev",
-                "linkedin_display": "linkedin.com/in/johndoe"
+                "linkedin_display": "linkedin.com/in/johndoe",
             }
         }
 
 
 class ExperienceModel(BaseModel):
     """Work experience model"""
+
     position: str
     company: str
     location: Optional[str] = None
     startDate: str  # YYYY-MM or YYYY-MM-DD format
     endDate: Optional[str] = "Present"  # YYYY-MM, YYYY-MM-DD, or "Present"
     description: Optional[str] = None
-    achievements: Optional[List[str]] = None
-    technologies: Optional[List[str]] = None
+    achievements: Optional[list[str]] = None
+    technologies: Optional[list[str]] = None
 
     class Config:
         schema_extra = {
@@ -219,21 +217,22 @@ class ExperienceModel(BaseModel):
                 "description": "Lead development of cloud-native applications",
                 "achievements": [
                     "Reduced system latency by 40%",
-                    "Led team of 5 engineers"
-                ]
+                    "Led team of 5 engineers",
+                ],
             }
         }
 
 
 class EducationModel(BaseModel):
     """Education model"""
+
     degree: str
     institution: str
     location: Optional[str] = None
     graduationDate: Optional[str] = None  # YYYY-MM or YYYY-MM-DD
     gpa: Optional[str] = None
-    coursework: Optional[List[str]] = None
-    honors: Optional[List[str]] = None
+    coursework: Optional[list[str]] = None
+    honors: Optional[list[str]] = None
 
     class Config:
         schema_extra = {
@@ -241,20 +240,21 @@ class EducationModel(BaseModel):
                 "degree": "Bachelor of Science in Computer Science",
                 "institution": "University of Technology",
                 "graduationDate": "2019-05",
-                "gpa": "3.8/4.0"
+                "gpa": "3.8/4.0",
             }
         }
 
 
 class ProjectModel(BaseModel):
     """Project model"""
+
     name: str
     description: str
-    technologies: Optional[List[str]] = None
+    technologies: Optional[list[str]] = None
     url: Optional[str] = None
     startDate: Optional[str] = None
     endDate: Optional[str] = None
-    achievements: Optional[List[str]] = None
+    achievements: Optional[list[str]] = None
 
     class Config:
         schema_extra = {
@@ -262,18 +262,19 @@ class ProjectModel(BaseModel):
                 "name": "E-commerce Platform",
                 "description": "Built a full-stack e-commerce platform using React and Node.js",
                 "technologies": ["React", "Node.js", "PostgreSQL"],
-                "url": "https://github.com/johndoe/ecommerce"
+                "url": "https://github.com/johndoe/ecommerce",
             }
         }
 
 
 class SkillsModel(BaseModel):
     """Skills model"""
-    technical: Optional[List[str]] = None
-    soft: Optional[List[str]] = None
-    languages: Optional[List[str]] = None
-    frameworks: Optional[List[str]] = None
-    tools: Optional[List[str]] = None
+
+    technical: Optional[list[str]] = None
+    soft: Optional[list[str]] = None
+    languages: Optional[list[str]] = None
+    frameworks: Optional[list[str]] = None
+    tools: Optional[list[str]] = None
 
     class Config:
         schema_extra = {
@@ -281,13 +282,14 @@ class SkillsModel(BaseModel):
                 "technical": ["Python", "JavaScript", "React", "AWS"],
                 "soft": ["Leadership", "Communication", "Problem Solving"],
                 "languages": ["English", "Spanish"],
-                "frameworks": ["Django", "React", "Vue.js"]
+                "frameworks": ["Django", "React", "Vue.js"],
             }
         }
 
 
 class CertificationModel(BaseModel):
     """Certification model"""
+
     name: str
     issuer: str
     date: Optional[str] = None
@@ -301,15 +303,16 @@ class CertificationModel(BaseModel):
                 "name": "AWS Certified Solutions Architect",
                 "issuer": "Amazon Web Services",
                 "date": "2023-06",
-                "expiry": "2026-06"
+                "expiry": "2026-06",
             }
         }
 
 
 class PublicationModel(BaseModel):
     """Publication model"""
+
     title: str
-    authors: List[str]
+    authors: list[str]
     venue: str
     date: str
     url: Optional[str] = None
@@ -321,18 +324,19 @@ class PublicationModel(BaseModel):
                 "title": "Machine Learning in Production Systems",
                 "authors": ["John Doe", "Jane Smith"],
                 "venue": "Journal of Software Engineering",
-                "date": "2023-12"
+                "date": "2023-12",
             }
         }
 
 
 class RecipientModel(BaseModel):
     """Cover letter recipient model"""
+
     name: Optional[str] = None
     title: Optional[str] = None
     company: Optional[str] = None
     department: Optional[str] = None
-    address: Optional[Union[str, List[str]]] = None
+    address: Optional[Union[str, list[str]]] = None
     street: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -348,25 +352,26 @@ class RecipientModel(BaseModel):
                 "street": "123 Business Ave",
                 "city": "San Francisco",
                 "state": "CA",
-                "zip": "94105"
+                "zip": "94105",
             }
         }
 
 
 class ResumeDataModel(BaseModel):
     """Complete resume data model"""
+
     personalInfo: PersonalInfoModel
     professionalSummary: Optional[str] = None
-    experience: Optional[List[ExperienceModel]] = None
-    education: Optional[List[EducationModel]] = None
-    projects: Optional[List[ProjectModel]] = None
+    experience: Optional[list[ExperienceModel]] = None
+    education: Optional[list[EducationModel]] = None
+    projects: Optional[list[ProjectModel]] = None
     skills: Optional[SkillsModel] = None
-    certifications: Optional[List[CertificationModel]] = None
-    publications: Optional[List[PublicationModel]] = None
-    achievements: Optional[List[str]] = None
-    awards: Optional[List[str]] = None
-    languages: Optional[List[str]] = None
-    interests: Optional[List[str]] = None
+    certifications: Optional[list[CertificationModel]] = None
+    publications: Optional[list[PublicationModel]] = None
+    achievements: Optional[list[str]] = None
+    awards: Optional[list[str]] = None
+    languages: Optional[list[str]] = None
+    interests: Optional[list[str]] = None
 
     class Config:
         schema_extra = {
@@ -375,7 +380,7 @@ class ResumeDataModel(BaseModel):
                     "name": "John Doe",
                     "email": "john@example.com",
                     "phone": "+1 (555) 123-4567",
-                    "location": "New York, NY"
+                    "location": "New York, NY",
                 },
                 "professionalSummary": "Experienced software engineer with 5+ years of expertise in full-stack development.",
                 "experience": [
@@ -388,21 +393,22 @@ class ResumeDataModel(BaseModel):
                         "description": "Lead development of cloud-native applications",
                         "achievements": [
                             "Reduced system latency by 40%",
-                            "Led team of 5 engineers"
-                        ]
+                            "Led team of 5 engineers",
+                        ],
                     }
-                ]
+                ],
             }
         }
 
 
 class CoverLetterDataModel(BaseModel):
     """Complete cover letter data model"""
+
     personalInfo: PersonalInfoModel
     recipient: Optional[RecipientModel] = None
     date: Optional[str] = None
     salutation: Optional[str] = None
-    body: Union[str, List[str]]
+    body: Union[str, list[str]]
     closing: Optional[str] = None
 
     class Config:
@@ -412,27 +418,28 @@ class CoverLetterDataModel(BaseModel):
                     "name": "John Doe",
                     "email": "john@example.com",
                     "phone": "+1 (555) 123-4567",
-                    "location": "New York, NY"
+                    "location": "New York, NY",
                 },
                 "recipient": {
                     "name": "Jane Smith",
                     "title": "Hiring Manager",
-                    "company": "Innovative Tech Solutions"
+                    "company": "Innovative Tech Solutions",
                 },
                 "body": [
                     "I am writing to express my strong interest in the Software Engineer position at your company.",
-                    "My experience in full-stack development and passion for innovation align perfectly with your requirements."
-                ]
+                    "My experience in full-stack development and passion for innovation align perfectly with your requirements.",
+                ],
             }
         }
 
 
 class DocumentRequest(BaseModel):
     """Document generation request with comprehensive data validation"""
+
     document_type: DocumentType
     template: str
     format: str = "pdf"
-    data: Union[ResumeDataModel, CoverLetterDataModel, Dict[str, Any]]
+    data: Union[ResumeDataModel, CoverLetterDataModel, dict[str, Any]]
     clean_up: bool = True
     ultra_validation: bool = False
 
@@ -447,16 +454,17 @@ class DocumentRequest(BaseModel):
                         "name": "John Doe",
                         "email": "john@example.com",
                         "phone": "+1 (555) 123-4567",
-                        "location": "New York, NY"
+                        "location": "New York, NY",
                     },
-                    "professionalSummary": "Experienced software engineer with 5+ years of expertise."
-                }
+                    "professionalSummary": "Experienced software engineer with 5+ years of expertise.",
+                },
             }
         }
 
 
 class YAMLDocumentRequest(BaseModel):
     """YAML-based document generation request"""
+
     document_type: DocumentType
     template: str
     format: str = "pdf"
@@ -470,15 +478,16 @@ class YAMLDocumentRequest(BaseModel):
                 "document_type": "resume",
                 "template": "classic",
                 "format": "pdf",
-                "yaml_data": "personalInfo:\n  name: John Doe\n  email: john@example.com\nprofessionalSummary: Experienced software engineer..."
+                "yaml_data": "personalInfo:\n  name: John Doe\n  email: john@example.com\nprofessionalSummary: Experienced software engineer...",
             }
         }
 
 
 class ValidationRequest(BaseModel):
     """Request model for data validation"""
+
     document_type: DocumentType
-    data: Union[ResumeDataModel, CoverLetterDataModel, Dict[str, Any]]
+    data: Union[ResumeDataModel, CoverLetterDataModel, dict[str, Any]]
     validation_level: str = "standard"  # "standard" or "ultra"
 
     class Config:
@@ -486,17 +495,16 @@ class ValidationRequest(BaseModel):
             "example": {
                 "document_type": "resume",
                 "data": {
-                    "personalInfo": {
-                        "name": "John Doe",
-                        "email": "john@example.com"
-                    }
+                    "personalInfo": {"name": "John Doe", "email": "john@example.com"}
                 },
-                "validation_level": "standard"
+                "validation_level": "standard",
             }
         }
 
 
-def parse_pydantic_error(exception: Exception, field_prefix: str = "") -> Dict[str, Any]:
+def parse_pydantic_error(
+    exception: Exception, field_prefix: str = ""
+) -> dict[str, Any]:
     """Parse Pydantic validation errors to extract field, expected type, and actual type"""
     error_str = str(exception)
 
@@ -528,11 +536,11 @@ def parse_pydantic_error(exception: Exception, field_prefix: str = "") -> Dict[s
         "field": field_name,
         "expected_type": expected_type,
         "actual_type": actual_type,
-        "details": error_str
+        "details": error_str,
     }
 
 
-def parse_yaml_data(yaml_content: str) -> Dict[str, Any]:
+def parse_yaml_data(yaml_content: str) -> dict[str, Any]:
     """Parse YAML content and return dictionary"""
     try:
         return yaml.safe_load(yaml_content)
@@ -556,7 +564,7 @@ def validate_date_format(date_str: str) -> bool:
         return False
 
 
-def validate_resume_data(data: Dict[str, Any]):
+def validate_resume_data(data: dict[str, Any]):
     """Validate resume data structure and content (original validation)"""
     if "personalInfo" not in data:
         raise ValidationException(
@@ -564,14 +572,12 @@ def validate_resume_data(data: Dict[str, Any]):
         )
 
     try:
-        personal_info = PersonalInfoModel(**data["personalInfo"])
+        PersonalInfoModel(**data["personalInfo"])
     except Exception as e:
         # Parse the Pydantic validation error to provide better error messages
         error_context = parse_pydantic_error(e, "personalInfo")
         raise ValidationException(
-            ErrorCode.VAL002,
-            field_path=error_context["field"],
-            context=error_context
+            ErrorCode.VAL002, field_path=error_context["field"], context=error_context
         )
 
     # Validate dates in experience
@@ -595,7 +601,7 @@ def validate_resume_data(data: Dict[str, Any]):
                 )
 
 
-def ultra_validate_and_normalize_data(data: Dict[str, Any]) -> Dict[str, Any]:
+def ultra_validate_and_normalize_data(data: dict[str, Any]) -> dict[str, Any]:
     """
     Ultra validation: Enhanced validation with normalization and LaTeX sanitization
 
@@ -652,7 +658,9 @@ async def validate_document_data(request: ValidationRequest):
     """
     try:
         # Convert data to dict for validation
-        data_dict = request.data if isinstance(request.data, dict) else request.data.dict()
+        data_dict = (
+            request.data if isinstance(request.data, dict) else request.data.dict()
+        )
 
         if request.validation_level == "ultra":
             try:
@@ -664,8 +672,10 @@ async def validate_document_data(request: ValidationRequest):
                     "data_summary": {
                         "document_type": request.document_type,
                         "sections_found": list(normalized_data.keys()),
-                        "personal_info_complete": "personalInfo" in normalized_data and "name" in normalized_data.get("personalInfo", {}) and "email" in normalized_data.get("personalInfo", {}),
-                    }
+                        "personal_info_complete": "personalInfo" in normalized_data
+                        and "name" in normalized_data.get("personalInfo", {})
+                        and "email" in normalized_data.get("personalInfo", {}),
+                    },
                 }
             except ValidationException as e:
                 return {
@@ -673,7 +683,10 @@ async def validate_document_data(request: ValidationRequest):
                     "validation_level": "ultra",
                     "errors": [str(e)],
                     "message": "Ultra validation failed. See errors for details.",
-                    "suggestions": ["Fix the validation errors listed above", "Consider using standard validation if ultra validation is too strict"]
+                    "suggestions": [
+                        "Fix the validation errors listed above",
+                        "Consider using standard validation if ultra validation is too strict",
+                    ],
                 }
         else:
             try:
@@ -685,8 +698,10 @@ async def validate_document_data(request: ValidationRequest):
                     "data_summary": {
                         "document_type": request.document_type,
                         "sections_found": list(data_dict.keys()),
-                        "personal_info_complete": "personalInfo" in data_dict and "name" in data_dict.get("personalInfo", {}) and "email" in data_dict.get("personalInfo", {}),
-                    }
+                        "personal_info_complete": "personalInfo" in data_dict
+                        and "name" in data_dict.get("personalInfo", {})
+                        and "email" in data_dict.get("personalInfo", {}),
+                    },
                 }
             except ValidationException as e:
                 return {
@@ -694,7 +709,10 @@ async def validate_document_data(request: ValidationRequest):
                     "validation_level": "standard",
                     "errors": [str(e)],
                     "message": "Standard validation failed. See errors for details.",
-                    "suggestions": ["Fix the validation errors listed above", "Ensure personalInfo section includes name and email"]
+                    "suggestions": [
+                        "Fix the validation errors listed above",
+                        "Ensure personalInfo section includes name and email",
+                    ],
                 }
 
     except Exception as e:
@@ -952,7 +970,7 @@ async def list_templates_by_type(document_type: DocumentType):
         engine = TemplateEngine()
         available_templates = engine.get_available_templates(document_type)
         return {"templates": available_templates}
-    except ValueError as e:
+    except ValueError:
         raise ResourceNotFoundException(resource="template listing")
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is
@@ -990,7 +1008,7 @@ async def get_template_info(document_type: DocumentType, template_name: str):
             )
 
         return template_info
-    except ValueError as e:
+    except ValueError:
         raise ResourceNotFoundException(resource="template listing")
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is
@@ -1027,13 +1045,11 @@ async def get_document_schema(document_type: DocumentType):
             "schema": schema_info["schema"],
             "json_example": schema_info["json_example"],
             "yaml_example": schema_info["yaml_example"],
-            "description": f"Complete schema and examples for {document_type.replace('_', ' ')} generation"
+            "description": f"Complete schema and examples for {document_type.replace('_', ' ')} generation",
         }
     except ValueError as e:
         raise InvalidParameterException(
-            parameter="document_type",
-            value=document_type,
-            context={"error": str(e)}
+            parameter="document_type", value=document_type, context={"error": str(e)}
         )
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is
@@ -1076,17 +1092,15 @@ async def get_document_schema_yaml(document_type: DocumentType):
                 "optional_sections": [
                     "All sections except personalInfo are optional",
                     "Include only the sections relevant to your document",
-                    "Arrays can be empty or omitted entirely"
+                    "Arrays can be empty or omitted entirely",
                 ],
                 "date_format": "Use YYYY-MM or YYYY-MM-DD format for dates",
-                "body_format": "For cover letters, body can be a string or array of paragraphs"
-            }
+                "body_format": "For cover letters, body can be a string or array of paragraphs",
+            },
         }
     except ValueError as e:
         raise InvalidParameterException(
-            parameter="document_type",
-            value=document_type,
-            context={"error": str(e)}
+            parameter="document_type", value=document_type, context={"error": str(e)}
         )
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is

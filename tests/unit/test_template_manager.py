@@ -1,14 +1,12 @@
 """Unit tests for the template manager (deprecated but maintained for backward compatibility)."""
 
-import pytest
-import os
 import warnings
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
-import tempfile
+from unittest.mock import Mock, patch
 
-from resume_agent_template_engine.templates.template_manager import TemplateManager
+import pytest
+
 from resume_agent_template_engine.core.template_engine import TemplateEngine
+from resume_agent_template_engine.templates.template_manager import TemplateManager
 
 
 class TestTemplateManager:
@@ -18,7 +16,7 @@ class TestTemplateManager:
         """Test that TemplateManager initialization shows deprecation warning"""
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            manager = TemplateManager()
+            TemplateManager()
 
             assert len(w) == 1
             assert issubclass(w[0].category, DeprecationWarning)

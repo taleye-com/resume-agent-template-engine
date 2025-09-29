@@ -3,13 +3,13 @@ Custom Exception Hierarchy for Resume Compiler
 Provides structured exceptions with error codes and automatic message formatting
 """
 
-from typing import Dict, Any, Optional, List
 import uuid
 from datetime import datetime
+from typing import Any, Optional
 
 from .errors import (
-    ErrorCode,
     ErrorCategory,
+    ErrorCode,
     ErrorSeverity,
     error_registry,
     get_error_definition,
@@ -22,7 +22,7 @@ class ResumeCompilerException(Exception):
     def __init__(
         self,
         error_code: ErrorCode,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         original_exception: Optional[Exception] = None,
         request_id: Optional[str] = None,
     ):
@@ -79,7 +79,7 @@ class ResumeCompilerException(Exception):
         """Check if this error should be shown to users"""
         return self.error_def.user_facing
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary format"""
         result = {
             "error": {
@@ -203,7 +203,7 @@ class TemplateNotFoundException(TemplateException):
         self,
         template_name: str,
         document_type: str,
-        available_templates: List[str] = None,
+        available_templates: list[str] = None,
         **kwargs,
     ):
         context = kwargs.get("context", {})

@@ -1,11 +1,10 @@
 """End-to-end tests for API endpoints with complete data flow."""
 
-import pytest
-import json
-import tempfile
 import os
-from pathlib import Path
-from unittest.mock import patch, Mock
+import tempfile
+from unittest.mock import Mock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 from resume_agent_template_engine.api.app import app
@@ -67,10 +66,11 @@ class TestAPIEndpointsE2E:
             assert schema_data["schema"]["type"] == "object"
 
             # Step 5: Generate resume PDF
-            with patch("tempfile.NamedTemporaryFile") as mock_temp, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_temp,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Create a real temporary file for the test
                 with tempfile.NamedTemporaryFile(
                     suffix=".pdf", delete=False
@@ -144,10 +144,11 @@ class TestAPIEndpointsE2E:
             assert schema_response.status_code == 200
 
             # Generate cover letter
-            with patch("tempfile.NamedTemporaryFile") as mock_temp, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_temp,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Create a real temporary file for the test
                 with tempfile.NamedTemporaryFile(
                     suffix=".pdf", delete=False
@@ -327,10 +328,11 @@ class TestAPIEndpointsE2E:
                 real_temp.write(b"Mock PDF content")
                 real_temp_path = real_temp.name
 
-            with patch("tempfile.NamedTemporaryFile") as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Mock tempfile to return our real file path
                 mock_temp = Mock()
                 mock_temp.name = real_temp_path
@@ -459,10 +461,11 @@ class TestAPIEndpointsE2E:
                 real_temp.write(b"Mock PDF content")
                 real_temp_path = real_temp.name
 
-            with patch("tempfile.NamedTemporaryFile") as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Mock tempfile to return our real file path
                 mock_temp = Mock()
                 mock_temp.name = real_temp_path
@@ -536,10 +539,11 @@ class TestAPIPerformanceE2E:
                 real_temp.write(b"Mock PDF content")
                 real_temp_path = real_temp.name
 
-            with patch("tempfile.NamedTemporaryFile") as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Mock tempfile to return our real file path
                 mock_temp = Mock()
                 mock_temp.name = real_temp_path
@@ -595,10 +599,11 @@ class TestAPIPerformanceE2E:
                 real_temp.write(b"Mock PDF content")
                 real_temp_path = real_temp.name
 
-            with patch("tempfile.NamedTemporaryFile") as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch("os.remove"):
-
+            with (
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
+            ):
                 # Mock tempfile to return our real file path
                 mock_temp = Mock()
                 mock_temp.name = real_temp_path
@@ -608,7 +613,7 @@ class TestAPIPerformanceE2E:
                     mock_engine.export_to_pdf.return_value = real_temp_path
 
                     # Make multiple requests to test memory stability
-                    for i in range(10):
+                    for _i in range(10):
                         generation_request = {
                             "document_type": "resume",
                             "template": "classic",

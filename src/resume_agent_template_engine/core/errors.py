@@ -3,10 +3,10 @@ Centralized Error Registry for Resume Compiler
 Provides standardized error codes, categories, and message templates
 """
 
-from enum import Enum
-from dataclasses import dataclass
-from typing import Dict, Any, Optional, List
 import logging
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class ErrorRegistry:
 
     def __init__(self):
         """Initialize the error registry with all error definitions"""
-        self._errors: Dict[ErrorCode, ErrorDefinition] = {}
+        self._errors: dict[ErrorCode, ErrorDefinition] = {}
         self._initialize_errors()
 
     def _initialize_errors(self):
@@ -456,15 +456,15 @@ class ErrorRegistry:
             logger.warning(f"Missing parameter {e} for error {code}")
             return error_def.message_template
 
-    def get_errors_by_category(self, category: ErrorCategory) -> List[ErrorDefinition]:
+    def get_errors_by_category(self, category: ErrorCategory) -> list[ErrorDefinition]:
         """Get all errors in a specific category"""
         return [error for error in self._errors.values() if error.category == category]
 
-    def get_errors_by_severity(self, severity: ErrorSeverity) -> List[ErrorDefinition]:
+    def get_errors_by_severity(self, severity: ErrorSeverity) -> list[ErrorDefinition]:
         """Get all errors with specific severity"""
         return [error for error in self._errors.values() if error.severity == severity]
 
-    def get_all_codes(self) -> List[ErrorCode]:
+    def get_all_codes(self) -> list[ErrorCode]:
         """Get all registered error codes"""
         return list(self._errors.keys())
 

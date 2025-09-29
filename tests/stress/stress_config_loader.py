@@ -1,10 +1,10 @@
 """Configuration loader for stress testing parameters."""
 
-import os
-import yaml
 import json
-from typing import Dict, Any, Optional, List
-from pathlib import Path
+import os
+from typing import Any, Optional
+
+import yaml
 
 
 class StressTestConfig:
@@ -45,10 +45,10 @@ class StressTestConfig:
         # If not found, use the default location
         return "config/stress_test_config.yaml"
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load configuration from YAML file."""
         try:
-            with open(self.config_path, "r") as file:
+            with open(self.config_path) as file:
                 return yaml.safe_load(file)
         except FileNotFoundError:
             print(
@@ -59,7 +59,7 @@ class StressTestConfig:
             print(f"Error loading config: {e}. Using default configuration.")
             return self._get_default_config()
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration if file is not found."""
         return {
             "global_settings": {
@@ -164,7 +164,7 @@ class StressTestConfig:
                     "timeout_seconds"
                 ]
 
-    def get_stress_level_config(self, level: Optional[str] = None) -> Dict[str, Any]:
+    def get_stress_level_config(self, level: Optional[str] = None) -> dict[str, Any]:
         """Get configuration for a specific stress level."""
         level = level or self.stress_level
         return self.config.get("stress_levels", {}).get(level, {})
@@ -188,14 +188,14 @@ class StressTestConfig:
         config = self.get_stress_level_config(level)
         return config.get("test_duration", {}).get(duration_type, 30)
 
-    def get_payload_size_config(self, level: Optional[str] = None) -> Dict[str, Any]:
+    def get_payload_size_config(self, level: Optional[str] = None) -> dict[str, Any]:
         """Get payload size configuration."""
         config = self.get_stress_level_config(level)
         return config.get(
             "payload_size", {"large_payload_entries": 100, "large_payload_size_mb": 5.0}
         )
 
-    def get_scaling_test_levels(self, level: Optional[str] = None) -> List[int]:
+    def get_scaling_test_levels(self, level: Optional[str] = None) -> list[int]:
         """Get scaling test levels."""
         config = self.get_stress_level_config(level)
         return config.get("concurrent_requests", {}).get(
@@ -260,7 +260,7 @@ class StressTestConfig:
 
     def print_configuration_summary(self):
         """Print a summary of the current configuration."""
-        print(f"\n=== Stress Test Configuration Summary ===")
+        print("\n=== Stress Test Configuration Summary ===")
         print(f"Stress Level: {self.stress_level}")
         print(f"Environment: {self.environment}")
         print(f"Config File: {self.config_path}")
@@ -305,7 +305,7 @@ def get_stress_config(
 
 
 def export_test_metrics(
-    metrics: Dict[str, Any], config: StressTestConfig, test_name: str
+    metrics: dict[str, Any], config: StressTestConfig, test_name: str
 ):
     """Export test metrics to file if enabled."""
     if not config.export_metrics_enabled():

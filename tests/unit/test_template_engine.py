@@ -1,19 +1,17 @@
 """Unit tests for the template engine core functionality."""
 
-import pytest
 import os
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
+from unittest.mock import patch
+
+import pytest
 
 from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine,
-    TemplateRegistry,
-    TemplateConfig,
     DocumentType,
     OutputFormat,
+    TemplateConfig,
+    TemplateEngine,
     TemplateInterface,
+    TemplateRegistry,
 )
 
 
@@ -237,24 +235,24 @@ from resume_agent_template_engine.core.template_engine import TemplateInterface,
 class ClassicResumeTemplate(TemplateInterface):
     def __init__(self, data, config=None):
         super().__init__(data, config)
-    
+
     def validate_data(self):
         if "personalInfo" not in self.data:
             raise ValueError("Personal info required")
-    
+
     def render(self):
         return "\\\\documentclass{article}\\\\begin{document}Test\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path):
         # Mock PDF export
         with open(output_path, 'wb') as f:
             f.write(b"Mock PDF content")
         return output_path
-    
+
     @property
     def required_fields(self):
         return ["personalInfo"]
-    
+
     @property
     def template_type(self):
         return DocumentType.RESUME

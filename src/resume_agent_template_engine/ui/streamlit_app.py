@@ -1,10 +1,11 @@
-import streamlit as st
 import json
-import yaml
 import os
 import sys
 import tempfile
-from typing import Dict, Any
+from typing import Any
+
+import streamlit as st
+import yaml
 
 # Add the src directory to the Python path
 current_dir = os.path.dirname(__file__)
@@ -12,9 +13,9 @@ src_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
 project_root = os.path.abspath(os.path.join(src_dir, ".."))
 sys.path.insert(0, src_dir)
 
-from resume_agent_template_engine.core.template_engine import TemplateEngine
 from resume_agent_template_engine.core.errors import ErrorCode
 from resume_agent_template_engine.core.exceptions import ValidationException
+from resume_agent_template_engine.core.template_engine import TemplateEngine
 
 # Configure Streamlit page
 st.set_page_config(
@@ -22,7 +23,7 @@ st.set_page_config(
 )
 
 
-def parse_input_data(input_text: str, input_format: str) -> Dict[str, Any]:
+def parse_input_data(input_text: str, input_format: str) -> dict[str, Any]:
     """Parse input data based on format (JSON or YAML)"""
     try:
         if input_format.lower() == "yaml":
@@ -331,7 +332,7 @@ projects:
             )
             pdf_display = f'<iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
             st.markdown(pdf_display, unsafe_allow_html=True)
-        except Exception as e:
+        except Exception:
             st.info("PDF preview not available. Please download the file to view it.")
 
 

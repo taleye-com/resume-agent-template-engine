@@ -1,19 +1,17 @@
 """Integration tests for the complete template workflow."""
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
-from unittest.mock import patch, Mock, MagicMock
-import yaml
+import tempfile
+from unittest.mock import Mock, patch
 
-from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine,
-    TemplateConfig,
-)
-from resume_agent_template_engine.templates.template_manager import TemplateManager
-from resume_agent_template_engine.api.app import app
+import pytest
 from fastapi.testclient import TestClient
+
+from resume_agent_template_engine.api.app import app
+from resume_agent_template_engine.core.template_engine import (
+    TemplateConfig,
+    TemplateEngine,
+)
 
 
 class TestTemplateWorkflowIntegration:
@@ -33,24 +31,24 @@ from resume_agent_template_engine.core.template_engine import TemplateInterface,
 class ClassicResumeTemplate(TemplateInterface):
     def __init__(self, data, config=None):
         super().__init__(data, config)
-    
+
     def validate_data(self):
         if "personalInfo" not in self.data:
             raise ValueError("Personal info required")
-    
+
     def render(self):
         return "\\\\documentclass{article}\\\\begin{document}Test Resume\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path):
         # Mock PDF export
         with open(output_path, 'wb') as f:
             f.write(b"Mock PDF content")
         return output_path
-    
+
     @property
     def required_fields(self):
         return ["personalInfo"]
-    
+
     @property
     def template_type(self):
         return DocumentType.RESUME
@@ -68,26 +66,26 @@ from resume_agent_template_engine.core.template_engine import TemplateInterface,
 class FormalCoverLetterTemplate(TemplateInterface):
     def __init__(self, data, config=None):
         super().__init__(data, config)
-    
+
     def validate_data(self):
         if "personalInfo" not in self.data:
             raise ValueError("Personal info required")
         if "recipient" not in self.data:
             raise ValueError("Recipient info required")
-    
+
     def render(self):
         return "\\\\documentclass{letter}\\\\begin{document}Test Cover Letter\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path):
         # Mock PDF export
         with open(output_path, 'wb') as f:
             f.write(b"Mock Cover Letter PDF content")
         return output_path
-    
+
     @property
     def required_fields(self):
         return ["personalInfo", "recipient"]
-    
+
     @property
     def template_type(self):
         return DocumentType.COVER_LETTER
@@ -407,23 +405,23 @@ from resume_agent_template_engine.core.template_engine import TemplateInterface,
 class ClassicResumeTemplate(TemplateInterface):
     def __init__(self, data, config=None):
         super().__init__(data, config)
-    
+
     def validate_data(self):
         if "personalInfo" not in self.data:
             raise ValueError("Personal info required")
-    
+
     def render(self):
         return "\\\\documentclass{article}\\\\begin{document}Test\\\\end{document}"
-    
+
     def export_to_pdf(self, output_path):
         with open(output_path, 'wb') as f:
             f.write(b"Mock PDF content")
         return output_path
-    
+
     @property
     def required_fields(self):
         return ["personalInfo"]
-    
+
     @property
     def template_type(self):
         return DocumentType.RESUME

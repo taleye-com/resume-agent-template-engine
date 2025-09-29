@@ -1,18 +1,17 @@
-import os
-import yaml
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Union
-from pathlib import Path
 import importlib.util
 import logging
+import os
+from abc import ABC, abstractmethod
 from enum import Enum
+from pathlib import Path
+from typing import Any, Optional, Union
 
-from .errors import ErrorCode
+import yaml
+
 from .exceptions import (
-    TemplateNotFoundException,
     TemplateCompilationException,
+    TemplateNotFoundException,
     TemplateRenderingException,
-    InternalServerException,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ class OutputFormat(str, Enum):
 class TemplateInterface(ABC):
     """Abstract base class for all templates"""
 
-    def __init__(self, data: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
+    def __init__(self, data: dict[str, Any], config: Optional[dict[str, Any]] = None):
         """
         Initialize template with data and configuration
 
@@ -65,7 +64,7 @@ class TemplateInterface(ABC):
 
     @property
     @abstractmethod
-    def required_fields(self) -> List[str]:
+    def required_fields(self) -> list[str]:
         """List of required data fields for this template"""
         pass
 
@@ -89,19 +88,19 @@ class TemplateConfig:
         self.config_path = config_path
         self.config = self._load_config()
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load configuration from YAML file"""
         if not self.config_path or not os.path.exists(self.config_path):
             return self._get_default_config()
 
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         except Exception as e:
             logger.warning(f"Failed to load config from {self.config_path}: {e}")
             return self._get_default_config()
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration"""
         return {
             "templates": {
@@ -125,7 +124,7 @@ class TemplateConfig:
 
     def get_template_config(
         self, document_type: str, template_name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get configuration for a specific template"""
         return (
             self.config.get("templates", {})
@@ -133,7 +132,7 @@ class TemplateConfig:
             .get(template_name, {})
         )
 
-    def get_rendering_config(self) -> Dict[str, Any]:
+    def get_rendering_config(self) -> dict[str, Any]:
         """Get rendering configuration"""
         return self.config.get("rendering", {})
 
@@ -180,7 +179,7 @@ class TemplateRegistry:
 
     def get_available_templates(
         self, document_type: Optional[str] = None
-    ) -> Union[Dict[str, List[str]], List[str]]:
+    ) -> Union[dict[str, list[str]], list[str]]:
         """Get available templates, optionally filtered by document type"""
         if document_type:
             return self._available_templates.get(document_type, [])
@@ -308,7 +307,7 @@ class TemplateEngine:
 
     def get_available_templates(
         self, document_type: Optional[str] = None
-    ) -> Union[Dict[str, List[str]], List[str]]:
+    ) -> Union[dict[str, list[str]], list[str]]:
         """Get available templates"""
         return self.registry.get_available_templates(document_type)
 
@@ -321,7 +320,7 @@ class TemplateEngine:
             return False
 
     def create_template(
-        self, document_type: str, template_name: str, data: Dict[str, Any]
+        self, document_type: str, template_name: str, data: dict[str, Any]
     ) -> TemplateInterface:
         """
         Create a template instance
@@ -355,7 +354,7 @@ class TemplateEngine:
         self,
         document_type: str,
         template_name: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         output_format: OutputFormat = OutputFormat.LATEX,
     ) -> str:
         """
@@ -388,7 +387,7 @@ class TemplateEngine:
         self,
         document_type: str,
         template_name: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         output_path: str,
     ) -> str:
         """
@@ -408,7 +407,7 @@ class TemplateEngine:
 
     def get_template_info(
         self, document_type: str, template_name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get information about a specific template
 

@@ -1,21 +1,22 @@
+import os
 import re
 import subprocess
-import os
 import tempfile
-from typing import Dict, Any, List
-from resume_agent_template_engine.core.template_engine import (
-    TemplateInterface,
-    DocumentType,
-)
+from typing import Any
+
 from resume_agent_template_engine.core.errors import ErrorCode
 from resume_agent_template_engine.core.exceptions import (
-    FileSystemException,
+    DependencyException,
     FileNotFoundException,
-    ValidationException,
-    TemplateRenderingException,
+    FileSystemException,
     LaTeXCompilationException,
     PDFGenerationException,
-    DependencyException,
+    TemplateRenderingException,
+    ValidationException,
+)
+from resume_agent_template_engine.core.template_engine import (
+    DocumentType,
+    TemplateInterface,
 )
 
 
@@ -25,7 +26,7 @@ class ClassicResumeTemplate(TemplateInterface):
     Handles special characters: &, %, $, #
     """
 
-    def __init__(self, data: Dict[str, Any], config: Dict[str, Any] = None) -> None:
+    def __init__(self, data: dict[str, Any], config: dict[str, Any] = None) -> None:
         """
         Initialize the ClassicResumeTemplate class.
 
@@ -42,7 +43,7 @@ class ClassicResumeTemplate(TemplateInterface):
         self.template_path = os.path.join(self.template_dir, "classic.tex")
 
         try:
-            with open(self.template_path, "r", encoding="utf-8") as f:
+            with open(self.template_path, encoding="utf-8") as f:
                 self.template = f.read()
         except FileNotFoundError as e:
             raise FileNotFoundException(
@@ -113,7 +114,7 @@ class ClassicResumeTemplate(TemplateInterface):
         self,
         obj: dict,
         primary_field: str,
-        fallback_fields: List[str] = None,
+        fallback_fields: list[str] = None,
         default_value: Any = None,
     ):
         """Get field with fallback options and default value"""
@@ -158,73 +159,72 @@ class ClassicResumeTemplate(TemplateInterface):
     def generate_personal_info(self) -> str:
         """
         Generate the header block dynamically from self.data['personalInfo'].
+        Creates a clean header layout:
+        - Line 1: Name (large font, centered)
+        - Line 2+: All contact info separated by | (auto-wraps if too long)
         """
         info = self.data["personalInfo"]
-        # You want the exact same formatting you had before, but built from code
         header_lines = []
         header_lines.append(r"\begin{header}")
-        header_lines.append(r"    \fontsize{25pt}{25pt}\selectfont " + info["name"])
-        header_lines.append(r"    \vspace{2pt}")
+
+        # Line 1: Name (large font, centered) - force line break after
+        header_lines.append(
+            r"    \fontsize{25pt}{25pt}\selectfont " + info["name"] + r" \\"
+        )
+        header_lines.append(r"    \vspace{5pt}")
         header_lines.append(r"    \normalsize")
-        # Build the contact line pieces
-        parts = []
 
-        # Only add location if it exists
+        # Build all contact parts
+        contact_parts = []
+
+        # Add location if it exists
         if info.get("location"):
-            parts.append(r"\mbox{ " + info["location"] + r" }")
+            contact_parts.append(info["location"])
 
-        # Email is required, so always add it
-        parts.append(
-            r"\mbox{\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}}"
+        # Email is required
+        contact_parts.append(
+            r"\href{mailto:" + info["email"] + r"}{" + info["email"] + r"}"
         )
 
-        # Only add phone if it exists
+        # Add phone if it exists
         if info.get("phone"):
-            parts.append(
-                r"\mbox{\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}}"
+            contact_parts.append(
+                r"\href{tel:" + info["phone"] + r"}{" + info["phone"] + r"}"
             )
 
-        # Add optional social links only if both URL and display text exist
+        # Add website if both URL and display text exist
         if info.get("website") and info.get("website_display"):
-            parts.append(
-                r"\mbox{\href{"
-                + info["website"]
-                + r"}{"
-                + info["website_display"]
-                + r"}}"
+            contact_parts.append(
+                r"\href{" + info["website"] + r"}{" + info["website_display"] + r"}"
             )
+
+        # Add LinkedIn if both URL and display text exist
         if info.get("linkedin") and info.get("linkedin_display"):
-            parts.append(
-                r"\mbox{\href{"
-                + info["linkedin"]
-                + r"}{"
-                + info["linkedin_display"]
-                + r"}}"
+            contact_parts.append(
+                r"\href{" + info["linkedin"] + r"}{" + info["linkedin_display"] + r"}"
             )
+
+        # Add GitHub if both URL and display text exist
         if info.get("github") and info.get("github_display"):
-            parts.append(
-                r"\mbox{\href{"
-                + info["github"]
-                + r"}{"
-                + info["github_display"]
-                + r"}}"
+            contact_parts.append(
+                r"\href{" + info["github"] + r"}{" + info["github_display"] + r"}"
             )
+
+        # Add Twitter/X if present
         if info.get("twitter") and info.get("twitter_display"):
-            parts.append(
-                r"\mbox{\href{"
-                + info["twitter"]
-                + r"}{"
-                + info["twitter_display"]
-                + r"}}"
+            contact_parts.append(
+                r"\href{" + info["twitter"] + r"}{" + info["twitter_display"] + r"}"
             )
         if info.get("x") and info.get("x_display"):
-            parts.append(
-                r"\mbox{\href{" + info["x"] + r"}{" + info["x_display"] + r"}}"
+            contact_parts.append(
+                r"\href{" + info["x"] + r"}{" + info["x_display"] + r"}"
             )
 
-        # Join them with the \AND separators exactly as before
-        contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(parts)
-        header_lines.append(r"    " + contact_line)
+        # Join all contact info with AND separators (LaTeX will handle line wrapping)
+        if contact_parts:
+            contact_line = " \\kern 3pt \\AND \\kern 3pt ".join(contact_parts)
+            header_lines.append(r"    " + contact_line)
+
         header_lines.append(r"\end{header}")
         return "\n".join(header_lines)
 
@@ -453,7 +453,6 @@ class ClassicResumeTemplate(TemplateInterface):
 
     def generate_date(self):
         """Generate date with smart formatting for resumes if needed"""
-        from datetime import datetime
 
         date = self.data.get("date", "")
         if date:
@@ -465,7 +464,7 @@ class ClassicResumeTemplate(TemplateInterface):
 
     def generate_resume(self):
         """Generate the final LaTeX resume by replacing placeholders."""
-        info = self.data["personalInfo"]
+        self.data["personalInfo"]
 
         # Generate content for each section using unified pattern
         personal_info = self.generate_personal_info()
@@ -534,7 +533,7 @@ class ClassicResumeTemplate(TemplateInterface):
         return self.generate_resume()
 
     @property
-    def required_fields(self) -> List[str]:
+    def required_fields(self) -> list[str]:
         """List of required data fields for this template"""
         return [
             "personalInfo",  # Only personalInfo is truly required

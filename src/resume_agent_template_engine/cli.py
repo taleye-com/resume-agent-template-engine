@@ -8,18 +8,16 @@ using configurable templates.
 
 import argparse
 import json
-import yaml
-import os
-import sys
-from pathlib import Path
-from typing import Dict, Any
 import logging
+import sys
+from typing import Any
+
+import yaml
 
 from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine,
     OutputFormat,
+    TemplateEngine,
 )
-from resume_agent_template_engine.core.base import DocumentType
 
 
 def setup_logging(level: str = "INFO"):
@@ -30,10 +28,10 @@ def setup_logging(level: str = "INFO"):
     )
 
 
-def load_data_file(file_path: str) -> Dict[str, Any]:
+def load_data_file(file_path: str) -> dict[str, Any]:
     """Load data from JSON or YAML file"""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             # Determine file format based on extension
             if file_path.lower().endswith((".yaml", ".yml")):
                 return yaml.safe_load(f)
@@ -213,7 +211,7 @@ def show_template_info(engine: TemplateEngine, document_type: str, template_name
     """Show detailed information about a template"""
     try:
         info = engine.get_template_info(document_type, template_name)
-        print(f"\nTemplate Information:")
+        print("\nTemplate Information:")
         print(f"  Name: {info['name']}")
         print(f"  Document Type: {info['document_type']}")
         print(f"  Description: {info['description']}")

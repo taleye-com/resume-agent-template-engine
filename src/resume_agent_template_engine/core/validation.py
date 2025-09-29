@@ -3,17 +3,15 @@ Enhanced validation system for resume compiler
 Provides schema validation, data normalization, fallback handling, and LaTeX injection prevention
 """
 
+import logging
 import re
-import json
 import urllib.parse
-from typing import Dict, Any, List, Optional, Union, Tuple
-from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
-import logging
+from typing import Any, Optional, Union
 
 from .errors import ErrorCode, ErrorSeverity, error_registry
-from .exceptions import ValidationException, SecurityValidationException
+from .exceptions import SecurityValidationException, ValidationException
 
 logger = logging.getLogger(__name__)
 
@@ -86,10 +84,10 @@ class ValidationResult:
     """Result of validation process"""
 
     is_valid: bool
-    errors: List[ValidationError]
-    warnings: List[ValidationError]
-    normalized_data: Dict[str, Any]
-    metadata: Dict[str, Any]
+    errors: list[ValidationError]
+    warnings: list[ValidationError]
+    normalized_data: dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class LaTeXSanitizer:
@@ -201,7 +199,7 @@ class DataNormalizer:
     @staticmethod
     def normalize_date(
         date_input: Union[str, dict, None],
-    ) -> Tuple[str, List[ValidationError]]:
+    ) -> tuple[str, list[ValidationError]]:
         """
         Normalize date to YYYY-MM or YYYY-MM-DD format
 
@@ -306,7 +304,7 @@ class DataNormalizer:
                                 )
                             )
                         return normalized, errors
-                    except Exception as e:
+                    except Exception:
                         continue
 
             # If no pattern matched
@@ -410,7 +408,7 @@ class DataNormalizer:
         return f"{int(year_str):04d}-{month_num:02d}-{int(day_str):02d}"
 
     @staticmethod
-    def normalize_phone(phone: str) -> Tuple[str, List[ValidationError]]:
+    def normalize_phone(phone: str) -> tuple[str, list[ValidationError]]:
         """
         Normalize phone number to consistent format
 
@@ -495,7 +493,7 @@ class DataNormalizer:
         return normalized, errors
 
     @staticmethod
-    def normalize_url(url: str) -> Tuple[str, List[ValidationError]]:
+    def normalize_url(url: str) -> tuple[str, list[ValidationError]]:
         """
         Normalize URL to standard format
 
@@ -519,7 +517,7 @@ class DataNormalizer:
                 ValidationError(
                     field_path="url",
                     error_type="format_normalized",
-                    message=f"Added https:// protocol to URL",
+                    message="Added https:// protocol to URL",
                     severity="info",
                     original_value=original_url,
                     corrected_value=url,
@@ -555,7 +553,7 @@ class DataNormalizer:
         return url, errors
 
     @staticmethod
-    def normalize_email(email: str) -> Tuple[str, List[ValidationError]]:
+    def normalize_email(email: str) -> tuple[str, list[ValidationError]]:
         """
         Normalize email address
 
@@ -593,7 +591,7 @@ class DataNormalizer:
                 ValidationError(
                     field_path="email",
                     error_type="format_normalized",
-                    message=f"Email normalized to lowercase",
+                    message="Email normalized to lowercase",
                     severity="info",
                     original_value=original_email,
                     corrected_value=normalized_email,
@@ -617,7 +615,7 @@ class ResumeValidator:
         self.sanitizer = LaTeXSanitizer()
         self.normalizer = DataNormalizer()
 
-    def validate(self, data: Dict[str, Any]) -> ValidationResult:
+    def validate(self, data: dict[str, Any]) -> ValidationResult:
         """
         Validate and normalize resume data
 
@@ -682,7 +680,7 @@ class ResumeValidator:
                 metadata={"validation_failed": True},
             )
 
-    def _validate_required_fields(self, data: Dict[str, Any]) -> List[ValidationError]:
+    def _validate_required_fields(self, data: dict[str, Any]) -> list[ValidationError]:
         """Validate required fields are present"""
         errors = []
 
@@ -730,10 +728,10 @@ class ResumeValidator:
 
     def _process_sections(
         self,
-        data: Dict[str, Any],
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
+    ) -> dict[str, Any]:
         """Process and normalize all sections"""
         normalized = {}
 
@@ -766,10 +764,10 @@ class ResumeValidator:
 
     def _process_personal_info(
         self,
-        personal_info: Dict[str, Any],
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
-    ) -> Dict[str, Any]:
+        personal_info: dict[str, Any],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
+    ) -> dict[str, Any]:
         """Process and normalize personal information"""
         normalized = {}
 
@@ -800,10 +798,10 @@ class ResumeValidator:
 
     def _process_experience(
         self,
-        experience: List[Dict[str, Any]],
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
-    ) -> List[Dict[str, Any]]:
+        experience: list[dict[str, Any]],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
+    ) -> list[dict[str, Any]]:
         """Process and normalize experience section"""
         if not isinstance(experience, list):
             errors.append(
@@ -850,10 +848,10 @@ class ResumeValidator:
 
     def _process_education(
         self,
-        education: List[Dict[str, Any]],
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
-    ) -> List[Dict[str, Any]]:
+        education: list[dict[str, Any]],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
+    ) -> list[dict[str, Any]]:
         """Process and normalize education section"""
         if not isinstance(education, list):
             errors.append(
@@ -902,8 +900,8 @@ class ResumeValidator:
         self,
         section_data: Any,
         section_path: str,
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
     ) -> Any:
         """Process generic sections with basic validation"""
         # This method handles other sections like skills, projects, etc.
@@ -912,10 +910,10 @@ class ResumeValidator:
 
     def _add_field_errors(
         self,
-        field_errors: List[ValidationError],
+        field_errors: list[ValidationError],
         field_path: str,
-        errors: List[ValidationError],
-        warnings: List[ValidationError],
+        errors: list[ValidationError],
+        warnings: list[ValidationError],
     ) -> None:
         """Add field errors to appropriate lists"""
         for error in field_errors:
@@ -945,7 +943,7 @@ class ResumeValidator:
 
 
 def validate_resume_data(
-    data: Dict[str, Any], validation_level: ValidationLevel = ValidationLevel.LENIENT
+    data: dict[str, Any], validation_level: ValidationLevel = ValidationLevel.LENIENT
 ) -> ValidationResult:
     """
     Convenience function to validate resume data

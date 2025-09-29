@@ -1,14 +1,10 @@
 import os
-import importlib.util
 import warnings
-from resume_agent_template_engine.core.template_engine import TemplateEngine
-from resume_agent_template_engine.core.errors import ErrorCode
+
 from resume_agent_template_engine.core.exceptions import (
-    FileSystemException,
     FileNotFoundException,
-    TemplateNotFoundException,
-    TemplateException,
 )
+from resume_agent_template_engine.core.template_engine import TemplateEngine
 
 
 class TemplateManager:
@@ -149,7 +145,9 @@ class TemplateManager:
         """
         return self._engine.render_document(category, template_name, data)
 
-    def export_template_to_pdf(self, category, template_name, data, output_path, config=None):
+    def export_template_to_pdf(
+        self, category, template_name, data, output_path, config=None
+    ):
         """
         Export a template to PDF.
 
@@ -184,7 +182,7 @@ class TemplateManager:
         Raises:
             ValidationException: If data is invalid
         """
-        template = self._engine.create_template(category, template_name, data)
+        self._engine.create_template(category, template_name, data)
         return True  # If no exception is raised, data is valid
 
     def get_template_info(self, category, template_name):

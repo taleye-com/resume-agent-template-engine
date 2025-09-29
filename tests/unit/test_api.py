@@ -1,12 +1,11 @@
 """Unit tests for the FastAPI application endpoints."""
 
-import pytest
-import json
-import tempfile
-from unittest.mock import Mock, patch, MagicMock
-from fastapi.testclient import TestClient
-from pathlib import Path
 import os
+import tempfile
+from unittest.mock import Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 from resume_agent_template_engine.api.app import (
     app,
@@ -406,8 +405,9 @@ class TestRequestModels:
 
     def test_personal_info_model_invalid_email(self):
         """Test PersonalInfo model with invalid email."""
-        from resume_agent_template_engine.api.app import PersonalInfo
         from pydantic import ValidationError
+
+        from resume_agent_template_engine.api.app import PersonalInfo
 
         with pytest.raises(ValidationError):
             PersonalInfo(name="John Doe", email="invalid-email")

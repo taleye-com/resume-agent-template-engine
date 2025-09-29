@@ -1,8 +1,8 @@
 """Sample data fixtures for testing."""
 
-from typing import Dict, Any, List
 import json
 from datetime import datetime
+from typing import Any
 
 
 class SampleDataFactory:
@@ -18,7 +18,7 @@ class SampleDataFactory:
         linkedin: str = "https://linkedin.com/in/johndoe",
         website_display: str = "https://johndoe.dev",
         linkedin_display: str = "https://linkedin.com/in/johndoe",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create sample personal information data."""
         return {
             "name": name,
@@ -38,8 +38,8 @@ class SampleDataFactory:
         location: str = "San Francisco, CA",
         start_date: str = "2020-01",
         end_date: str = "Present",
-        description: List[str] = None,
-    ) -> Dict[str, Any]:
+        description: list[str] = None,
+    ) -> dict[str, Any]:
         """Create a sample work experience entry."""
         if description is None:
             description = [
@@ -64,8 +64,8 @@ class SampleDataFactory:
         location: str = "Berkeley, CA",
         graduation_date: str = "2019-05",
         gpa: str = None,
-        honors: List[str] = None,
-    ) -> Dict[str, Any]:
+        honors: list[str] = None,
+    ) -> dict[str, Any]:
         """Create a sample education entry."""
         entry = {
             "degree": degree,
@@ -85,11 +85,11 @@ class SampleDataFactory:
     def create_project_entry(
         name: str = "Resume Builder API",
         description: str = "A FastAPI-based service for generating professional resumes",
-        technologies: List[str] = None,
+        technologies: list[str] = None,
         url: str = "https://github.com/user/resume-api",
         start_date: str = None,
         end_date: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a sample project entry."""
         if technologies is None:
             technologies = ["Python", "FastAPI", "PostgreSQL", "Docker"]
@@ -110,12 +110,12 @@ class SampleDataFactory:
 
     @staticmethod
     def create_skills_section(
-        programming: List[str] = None,
-        frameworks: List[str] = None,
-        databases: List[str] = None,
-        tools: List[str] = None,
-        soft_skills: List[str] = None,
-    ) -> Dict[str, List[str]]:
+        programming: list[str] = None,
+        frameworks: list[str] = None,
+        databases: list[str] = None,
+        tools: list[str] = None,
+        soft_skills: list[str] = None,
+    ) -> dict[str, list[str]]:
         """Create a sample skills section."""
         return {
             "programming": programming
@@ -130,15 +130,15 @@ class SampleDataFactory:
 
     @staticmethod
     def create_complete_resume_data(
-        personal_info: Dict[str, Any] = None,
+        personal_info: dict[str, Any] = None,
         summary: str = None,
-        experience: List[Dict[str, Any]] = None,
-        education: List[Dict[str, Any]] = None,
-        skills: Dict[str, List[str]] = None,
-        projects: List[Dict[str, Any]] = None,
-        certifications: List[Dict[str, Any]] = None,
-        languages: List[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        experience: list[dict[str, Any]] = None,
+        education: list[dict[str, Any]] = None,
+        skills: dict[str, list[str]] = None,
+        projects: list[dict[str, Any]] = None,
+        certifications: list[dict[str, Any]] = None,
+        languages: list[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """Create a complete sample resume data structure."""
 
         if personal_info is None:
@@ -251,13 +251,13 @@ class SampleDataFactory:
 
     @staticmethod
     def create_cover_letter_data(
-        personal_info: Dict[str, Any] = None,
-        recipient: Dict[str, Any] = None,
+        personal_info: dict[str, Any] = None,
+        recipient: dict[str, Any] = None,
         job_title: str = "Senior Software Engineer",
         company: str = "Amazing Tech Company",
-        content: Dict[str, Any] = None,
+        content: dict[str, Any] = None,
         date: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create sample cover letter data."""
 
         if personal_info is None:
@@ -323,8 +323,8 @@ LARGE_RESUME_DATA = SampleDataFactory.create_complete_resume_data(
         SampleDataFactory.create_experience_entry(
             title=f"Software Engineer {i}",
             company=f"Company {i}",
-            start_date=f"20{20-i:02d}-01",
-            end_date=f"20{21-i:02d}-12",
+            start_date=f"20{20 - i:02d}-01",
+            end_date=f"20{21 - i:02d}-12",
             description=[f"Task {j} description" for j in range(10)],
         )
         for i in range(20)
@@ -392,7 +392,7 @@ SAMPLE_RESUME_DATA_BY_INDUSTRY = {
 }
 
 
-def get_sample_data(data_type: str, variant: str = "default") -> Dict[str, Any]:
+def get_sample_data(data_type: str, variant: str = "default") -> dict[str, Any]:
     """
     Retrieve sample data by type and variant.
 
@@ -417,7 +417,7 @@ def get_sample_data(data_type: str, variant: str = "default") -> Dict[str, Any]:
     return data_map.get(data_type, {}).get(variant, {})
 
 
-def save_sample_data_to_file(data: Dict[str, Any], filename: str) -> None:
+def save_sample_data_to_file(data: dict[str, Any], filename: str) -> None:
     """Save sample data to a JSON file for external testing."""
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

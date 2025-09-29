@@ -1,26 +1,20 @@
 """Unit tests for the CLI module."""
 
-import pytest
-import sys
-import tempfile
-import os
 import json
-from unittest.mock import Mock, patch, MagicMock, mock_open
-from pathlib import Path
-from io import StringIO
-import argparse
+from unittest.mock import Mock, mock_open, patch
+
+import pytest
 
 from resume_agent_template_engine.cli import (
+    create_sample_data,
+    generate_document,
+    list_templates,
+    load_data_file,
     main,
     setup_logging,
-    load_data_file,
-    create_sample_data,
-    list_templates,
     show_template_info,
-    generate_document,
 )
 from resume_agent_template_engine.core.template_engine import (
-    TemplateEngine,
     OutputFormat,
 )
 
@@ -74,7 +68,6 @@ class TestCLIFunctions:
             create_sample_data("resume", str(output_file))
 
         assert output_file.exists()
-        import json
 
         data = json.loads(output_file.read_text())
         assert "personalInfo" in data
@@ -89,7 +82,6 @@ class TestCLIFunctions:
             create_sample_data("cover_letter", str(output_file))
 
         assert output_file.exists()
-        import json
 
         data = json.loads(output_file.read_text())
         assert "personalInfo" in data
@@ -176,7 +168,7 @@ class TestCLIFunctions:
 
         mock_load_data.return_value = {"personalInfo": {"name": "John Doe"}}
 
-        with patch("builtins.print") as mock_print:
+        with patch("builtins.print"):
             generate_document(
                 mock_engine, "resume", "classic", "data.json", "output.tex", "latex"
             )

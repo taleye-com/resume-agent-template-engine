@@ -1,19 +1,20 @@
 """Comprehensive stress testing and performance benchmarking for the resume-agent-template-engine."""
 
-import pytest
-import time
-import threading
-import tempfile
-import os
 import gc
-import statistics
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from unittest.mock import patch, Mock
-from fastapi.testclient import TestClient
 import json
+import os
+import statistics
+import tempfile
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from unittest.mock import Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 from resume_agent_template_engine.api.app import app
-from tests.stress.stress_config_loader import get_stress_config, export_test_metrics
+from tests.stress.stress_config_loader import export_test_metrics, get_stress_config
 
 
 class TestStressTesting:
@@ -88,16 +89,14 @@ class TestStressTesting:
         mock_engine, temp_path = mock_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -207,15 +206,15 @@ class TestStressTesting:
                 )
 
                 # Dynamic assertions based on configuration
-                assert (
-                    success_rate >= success_rate_threshold
-                ), f"Success rate too low: {success_rate:.2%} (threshold: {success_rate_threshold:.2%})"
-                assert (
-                    avg_response_time < avg_response_time_threshold
-                ), f"Average response time too high: {avg_response_time:.2f}s (threshold: {avg_response_time_threshold:.2f}s)"
-                assert (
-                    throughput > throughput_threshold
-                ), f"Throughput too low: {throughput:.2f} req/s (threshold: {throughput_threshold:.2f} req/s)"
+                assert success_rate >= success_rate_threshold, (
+                    f"Success rate too low: {success_rate:.2%} (threshold: {success_rate_threshold:.2%})"
+                )
+                assert avg_response_time < avg_response_time_threshold, (
+                    f"Average response time too high: {avg_response_time:.2f}s (threshold: {avg_response_time_threshold:.2f}s)"
+                )
+                assert throughput > throughput_threshold, (
+                    f"Throughput too low: {throughput:.2f} req/s (threshold: {throughput_threshold:.2f} req/s)"
+                )
 
                 if stress_config.is_detailed_logging_enabled():
                     print(
@@ -246,16 +245,14 @@ class TestStressTesting:
         mock_engine, temp_path = mock_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -272,7 +269,7 @@ class TestStressTesting:
 
                 num_requests = 100
 
-                print(f"\n=== Memory Stress Test Results ===")
+                print("\n=== Memory Stress Test Results ===")
                 print(f"Running {num_requests} requests to test memory stability...")
 
                 for i in range(num_requests):
@@ -298,16 +295,14 @@ class TestStressTesting:
         mock_engine, temp_path = mock_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -387,7 +382,7 @@ class TestStressTesting:
                 payload_size = (
                     len(json.dumps(request_data).encode("utf-8")) / 1024 / 1024
                 )  # MB
-                print(f"\n=== Large Payload Stress Test ===")
+                print("\n=== Large Payload Stress Test ===")
                 print(f"Payload size: {payload_size:.2f} MB")
 
                 # Test large payload processing
@@ -397,12 +392,12 @@ class TestStressTesting:
 
                 processing_time = end_time - start_time
 
-                assert (
-                    response.status_code == 200
-                ), f"Large payload failed: {response.status_code}"
-                assert (
-                    processing_time < 10.0
-                ), f"Large payload took too long: {processing_time:.2f}s"
+                assert response.status_code == 200, (
+                    f"Large payload failed: {response.status_code}"
+                )
+                assert processing_time < 10.0, (
+                    f"Large payload took too long: {processing_time:.2f}s"
+                )
 
                 print(f"Processing time: {processing_time:.2f}s")
                 print(f"Processing rate: {payload_size / processing_time:.2f} MB/s")
@@ -419,16 +414,14 @@ class TestStressTesting:
         mock_engine, temp_path = mock_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -481,7 +474,7 @@ class TestStressTesting:
                     successful_requests / total_requests if total_requests > 0 else 0
                 )
 
-                print(f"\n=== Sustained Load Endurance Test Results ===")
+                print("\n=== Sustained Load Endurance Test Results ===")
                 print(f"Test duration: {test_duration}s")
                 print(f"Total requests: {total_requests}")
                 print(f"Successful requests: {successful_requests}")
@@ -497,18 +490,18 @@ class TestStressTesting:
                     )
 
                 # Assertions
-                assert (
-                    success_rate >= 0.98
-                ), f"Success rate too low for sustained load: {success_rate:.2%}"
-                assert (
-                    total_requests >= expected_requests * 0.8
-                ), f"Too few requests processed: {total_requests}"
+                assert success_rate >= 0.98, (
+                    f"Success rate too low for sustained load: {success_rate:.2%}"
+                )
+                assert total_requests >= expected_requests * 0.8, (
+                    f"Too few requests processed: {total_requests}"
+                )
 
                 if response_times:
                     avg_response_time = statistics.mean(response_times)
-                    assert (
-                        avg_response_time < 1.0
-                    ), f"Average response time degraded: {avg_response_time:.3f}s"
+                    assert avg_response_time < 1.0, (
+                        f"Average response time degraded: {avg_response_time:.3f}s"
+                    )
 
         finally:
             # Cleanup
@@ -548,16 +541,14 @@ class TestPerformanceBenchmarking:
         mock_engine, temp_path = benchmark_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -630,7 +621,7 @@ class TestPerformanceBenchmarking:
                 }
 
                 # Print benchmark results
-                print(f"\n=== Performance Benchmark Results ===")
+                print("\n=== Performance Benchmark Results ===")
                 for operation, metrics in benchmarks.items():
                     print(f"{operation}:")
                     print(f"  Average: {metrics['avg']:.3f}s")
@@ -639,18 +630,18 @@ class TestPerformanceBenchmarking:
 
                 # Performance assertions (these should be adjusted based on requirements)
                 assert benchmarks["health_check"]["avg"] < 0.01, "Health check too slow"
-                assert (
-                    benchmarks["list_templates"]["avg"] < 0.05
-                ), "Template listing too slow"
-                assert (
-                    benchmarks["get_schema"]["avg"] < 0.05
-                ), "Schema retrieval too slow"
-                assert (
-                    benchmarks["document_generation"]["avg"] < 1.0
-                ), "Document generation too slow"
-                assert (
-                    benchmarks["document_generation"]["p95"] < 2.0
-                ), "95% of document generations too slow"
+                assert benchmarks["list_templates"]["avg"] < 0.05, (
+                    "Template listing too slow"
+                )
+                assert benchmarks["get_schema"]["avg"] < 0.05, (
+                    "Schema retrieval too slow"
+                )
+                assert benchmarks["document_generation"]["avg"] < 1.0, (
+                    "Document generation too slow"
+                )
+                assert benchmarks["document_generation"]["p95"] < 2.0, (
+                    "95% of document generations too slow"
+                )
 
         finally:
             # Cleanup
@@ -664,16 +655,14 @@ class TestPerformanceBenchmarking:
         mock_engine, temp_path = benchmark_engine_setup()
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine_class.return_value = mock_engine
 
                 # Mock tempfile to return our real file path
@@ -721,7 +710,7 @@ class TestPerformanceBenchmarking:
                         "total_time": total_time,
                     }
 
-                print(f"\n=== Throughput Benchmark Results ===")
+                print("\n=== Throughput Benchmark Results ===")
                 for concurrency, results in throughput_results.items():
                     print(f"Concurrency {concurrency}:")
                     print(f"  Throughput: {results['throughput']:.2f} req/s")
@@ -729,18 +718,18 @@ class TestPerformanceBenchmarking:
                     print(f"  Total time: {results['total_time']:.2f}s")
 
                 # Assert minimum throughput requirements
-                assert (
-                    throughput_results[1]["throughput"] > 5
-                ), "Single request throughput too low"
-                assert (
-                    throughput_results[10]["throughput"] > 15
-                ), "Concurrent throughput too low"
+                assert throughput_results[1]["throughput"] > 5, (
+                    "Single request throughput too low"
+                )
+                assert throughput_results[10]["throughput"] > 15, (
+                    "Concurrent throughput too low"
+                )
 
                 # Assert that success rate doesn't degrade significantly with concurrency
                 for results in throughput_results.values():
-                    assert (
-                        results["success_rate"] >= 0.95
-                    ), "Success rate degraded with concurrency"
+                    assert results["success_rate"] >= 0.95, (
+                        "Success rate degraded with concurrency"
+                    )
 
         finally:
             # Cleanup
@@ -763,16 +752,14 @@ class TestConcurrencyValidation:
             temp_path = temp_file.name
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine = Mock()
                 mock_engine.get_available_templates.return_value = {
                     "resume": ["classic"]
@@ -832,15 +819,15 @@ class TestConcurrencyValidation:
                     results = [future.result() for future in as_completed(futures)]
 
                 # Verify no race conditions occurred
-                assert (
-                    shared_state["counter"] == num_threads
-                ), "Race condition detected in counter"
-                assert (
-                    len(shared_state["errors"]) == 0
-                ), f"Errors detected: {shared_state['errors']}"
+                assert shared_state["counter"] == num_threads, (
+                    "Race condition detected in counter"
+                )
+                assert len(shared_state["errors"]) == 0, (
+                    f"Errors detected: {shared_state['errors']}"
+                )
                 assert all(results), "Some concurrent requests failed"
 
-                print(f"\n=== Race Condition Test Results ===")
+                print("\n=== Race Condition Test Results ===")
                 print(f"Concurrent requests: {num_threads}")
                 print(f"Successful requests: {sum(results)}")
                 print(f"Counter value: {shared_state['counter']}")
@@ -857,16 +844,14 @@ class TestConcurrencyValidation:
             temp_path = temp_file.name
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine = Mock()
                 mock_engine.get_available_templates.return_value = {
                     "resume": ["classic"]
@@ -925,7 +910,7 @@ class TestConcurrencyValidation:
                 status_codes = [r["status_code"] for r in results]
                 successful_requests = sum(1 for code in status_codes if code == 200)
 
-                print(f"\n=== Resource Contention Test Results ===")
+                print("\n=== Resource Contention Test Results ===")
                 print(f"Total requests: {num_requests}")
                 print(f"Successful requests: {successful_requests}")
                 print(f"Success rate: {successful_requests / num_requests:.2%}")
@@ -935,21 +920,21 @@ class TestConcurrencyValidation:
 
                 # Assertions
                 success_rate = successful_requests / num_requests
-                assert (
-                    success_rate >= 0.95
-                ), f"Success rate too low under contention: {success_rate:.2%}"
+                assert success_rate >= 0.95, (
+                    f"Success rate too low under contention: {success_rate:.2%}"
+                )
 
                 # Response times should still be reasonable even under contention
                 avg_response_time = statistics.mean(response_times)
-                assert (
-                    avg_response_time < 2.0
-                ), f"Average response time too high under contention: {avg_response_time:.3f}s"
+                assert avg_response_time < 2.0, (
+                    f"Average response time too high under contention: {avg_response_time:.3f}s"
+                )
 
                 # No response should take extremely long (deadlock detection)
                 max_response_time = max(response_times)
-                assert (
-                    max_response_time < 5.0
-                ), f"Maximum response time indicates potential deadlock: {max_response_time:.3f}s"
+                assert max_response_time < 5.0, (
+                    f"Maximum response time indicates potential deadlock: {max_response_time:.3f}s"
+                )
 
         finally:
             if os.path.exists(temp_path):
@@ -971,16 +956,14 @@ class TestScalabilityValidation:
             temp_path = temp_file.name
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine = Mock()
                 mock_engine.get_available_templates.return_value = {
                     "resume": ["classic"]
@@ -1038,7 +1021,7 @@ class TestScalabilityValidation:
                     # Small delay between load tests
                     time.sleep(0.5)
 
-                print(f"\n=== Load Scaling Behavior Results ===")
+                print("\n=== Load Scaling Behavior Results ===")
                 for load, metrics in results.items():
                     print(f"Load {load}:")
                     print(f"  Success rate: {metrics['success_rate']:.2%}")
@@ -1056,22 +1039,22 @@ class TestScalabilityValidation:
 
                 # Assert that success rate doesn't degrade significantly
                 min_success_rate = min(success_rates)
-                assert (
-                    min_success_rate >= 0.90
-                ), f"Success rate degraded too much at high load: {min_success_rate:.2%}"
+                assert min_success_rate >= 0.90, (
+                    f"Success rate degraded too much at high load: {min_success_rate:.2%}"
+                )
 
                 # Assert that response time doesn't increase exponentially
                 max_response_time = max(avg_response_times)
-                assert (
-                    max_response_time < 3.0
-                ), f"Response time increased too much at high load: {max_response_time:.3f}s"
+                assert max_response_time < 3.0, (
+                    f"Response time increased too much at high load: {max_response_time:.3f}s"
+                )
 
                 # Throughput should generally be reasonable across all load levels
                 # Note: Throughput may not always increase linearly due to resource contention
                 min_throughput = min(throughputs)
-                assert (
-                    min_throughput > 100
-                ), f"Minimum throughput too low: {min_throughput:.2f} req/s"
+                assert min_throughput > 100, (
+                    f"Minimum throughput too low: {min_throughput:.2f} req/s"
+                )
 
         finally:
             if os.path.exists(temp_path):
@@ -1085,16 +1068,14 @@ class TestScalabilityValidation:
             temp_path = temp_file.name
 
         try:
-            with patch(
-                "resume_agent_template_engine.api.app.TemplateEngine"
-            ) as mock_engine_class, patch(
-                "tempfile.NamedTemporaryFile"
-            ) as mock_tempfile, patch(
-                "os.path.exists", return_value=True
-            ), patch(
-                "os.remove"
+            with (
+                patch(
+                    "resume_agent_template_engine.api.app.TemplateEngine"
+                ) as mock_engine_class,
+                patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+                patch("os.path.exists", return_value=True),
+                patch("os.remove"),
             ):
-
                 mock_engine = Mock()
                 mock_engine.get_available_templates.return_value = {
                     "resume": ["classic"]
@@ -1115,7 +1096,7 @@ class TestScalabilityValidation:
                 }
 
                 # Phase 1: Normal operation baseline
-                print(f"\n=== Recovery Test: Phase 1 - Baseline ===")
+                print("\n=== Recovery Test: Phase 1 - Baseline ===")
                 baseline_start = time.time()
                 response = client.post("/generate", json=request_data)
                 baseline_time = time.time() - baseline_start
@@ -1123,7 +1104,7 @@ class TestScalabilityValidation:
                 print(f"Baseline response time: {baseline_time:.3f}s")
 
                 # Phase 2: Overload the system
-                print(f"=== Recovery Test: Phase 2 - Overload ===")
+                print("=== Recovery Test: Phase 2 - Overload ===")
                 overload_requests = 50
                 overload_concurrency = 30
 
@@ -1150,14 +1131,14 @@ class TestScalabilityValidation:
                 print(f"Overload duration: {overload_end - overload_start:.2f}s")
 
                 # Phase 3: Recovery period
-                print(f"=== Recovery Test: Phase 3 - Recovery ===")
+                print("=== Recovery Test: Phase 3 - Recovery ===")
                 time.sleep(2)  # Allow system to recover
 
                 # Test recovery with single requests
                 recovery_times = []
                 recovery_successes = 0
 
-                for i in range(10):
+                for _i in range(10):
                     recovery_start = time.time()
                     response = client.post("/generate", json=request_data)
                     recovery_time = time.time() - recovery_start
@@ -1175,15 +1156,15 @@ class TestScalabilityValidation:
                 print(f"Average recovery response time: {avg_recovery_time:.3f}s")
 
                 # Assertions
-                assert (
-                    recovery_success_rate >= 0.90
-                ), f"System didn't recover properly: {recovery_success_rate:.2%}"
+                assert recovery_success_rate >= 0.90, (
+                    f"System didn't recover properly: {recovery_success_rate:.2%}"
+                )
 
                 # Response time should return to reasonable levels after recovery
                 recovery_degradation = avg_recovery_time / baseline_time
-                assert (
-                    recovery_degradation < 10.0
-                ), f"Response time didn't recover properly: {recovery_degradation:.2f}x baseline"
+                assert recovery_degradation < 10.0, (
+                    f"Response time didn't recover properly: {recovery_degradation:.2f}x baseline"
+                )
 
                 print(f"Recovery degradation factor: {recovery_degradation:.2f}x")
 
