@@ -72,10 +72,11 @@ class TemplateManager:
                 if not os.path.isdir(template_path) or template_name.startswith("__"):
                     continue
 
-                # Verify it has a .tex file (no longer need helper.py)
+                # Verify it has a helper.py file and a .tex file
+                helper_path = os.path.join(template_path, "helper.py")
                 tex_files = [f for f in os.listdir(template_path) if f.endswith(".tex")]
 
-                if tex_files:
+                if os.path.exists(helper_path) and tex_files:
                     templates[category].append(template_name)
 
         return templates
@@ -97,120 +98,104 @@ class TemplateManager:
         """
         Load a template class by category and name.
 
-        DEPRECATED: This method is kept for backward compatibility.
-        Use TemplateEngine.create_template() instead.
-
         Args:
-            category (str): The template category (e.g., 'resume', 'cover_letter')
+            category (str): The category of the template
             template_name (str): The name of the template
 
         Returns:
             class: The template class
+
+        Raises:
+            TemplateNotFoundException: If template is not found
+            TemplateException: If there's an error loading the template
         """
-        # Validate category and template name
-        if category not in self.available_templates:
-            available_categories = list(self.available_templates.keys())
-            raise TemplateNotFoundException(
-                template_name="",
-                document_type=category,
-                available_templates=available_categories,
-            )
+        return self._engine.registry.load_template_class(category, template_name)
 
-        if template_name not in self.available_templates[category]:
-            available_templates = self.available_templates[category]
-            raise TemplateNotFoundException(
-                template_name=template_name,
-                document_type=category,
-                available_templates=available_templates,
-            )
-
-        # Construct the path to the helper.py file
-        helper_path = os.path.join(
-            self.templates_dir, category, template_name, "helper.py"
-        )
-
-        # Load the module dynamically
-        spec = importlib.util.spec_from_file_location(
-            f"{category}_{template_name}", helper_path
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Find the class in the module
-        # First try conventional name format: ModernCoverLetterTemplate
-        class_name_options = []
-
-        # For categories with underscores like "cover_letter", convert to CamelCase
-        if "_" in category:
-            category_camel = "".join(x.capitalize() for x in category.split("_"))
-        else:
-            category_camel = category.capitalize()
-
-        # Try multiple naming patterns
-        class_name_options = [
-            # ModernCoverLetterTemplate
-            f"{template_name.capitalize()}{category_camel}Template",
-            # CoverLetterModernTemplate
-            f"{category_camel}{template_name.capitalize()}Template",
-            # ModernTemplate
-            f"{template_name.capitalize()}Template",
-        ]
-
-        # Try each possible class name
-        for class_name in class_name_options:
-            if hasattr(module, class_name):
-                return getattr(module, class_name)
-
-        # If we get here, no matching class was found
-        class_list = [
-            name
-            for name in dir(module)
-            if not name.startswith("_") and name.endswith("Template")
-        ]
-        if class_list:
-            # If we found any template class, return the first one
-            return getattr(module, class_list[0])
-
-        raise TemplateException(
-            error_code=ErrorCode.TPL005,
-            template_name=template_name,
-            document_type=category,
-            context={
-                "module_path": helper_path,
-                "tried_classes": ", ".join(class_name_options),
-            },
-        )
-
-    def create_template(self, category, template_name, data):
+    def create_template_instance(self, category, template_name, data, config=None):
         """
-        Create a template instance with the provided data.
+        Create an instance of a template with the given data.
 
         Args:
-            category (str): The template category (e.g., 'resume', 'cover_letter')
+            category (str): The category of the template
             template_name (str): The name of the template
-            data (dict): The data to initialize the template with
+            data (dict): The data for the template
+            config (dict, optional): Configuration for the template
 
         Returns:
-            object: An instance of the template class
+            TemplateInterface: An instance of the template
+
+        Raises:
+            TemplateNotFoundException: If template is not found
+            TemplateException: If there's an error creating the instance
         """
         return self._engine.create_template(category, template_name, data)
 
-    def generate_pdf(self, category, template_name, data, output_path=None):
+    def render_template(self, category, template_name, data, config=None):
         """
-        Generate a PDF from a template.
+        Render a template with the given data.
 
         Args:
-            category (str): The template category (e.g., 'resume', 'cover_letter')
+            category (str): The category of the template
             template_name (str): The name of the template
-            data (dict): The data to generate the document with
-            output_path (str, optional): Path to save the PDF. If None, uses a default path.
+            data (dict): The data for the template
+            config (dict, optional): Configuration for the template
 
         Returns:
-            str: The path to the generated PDF
-        """
-        # Set default output path if not provided
-        if output_path is None:
-            output_path = f"{category}_{template_name}.pdf"
+            str: The rendered template
 
-        # Use the new template engine
+        Raises:
+            TemplateNotFoundException: If template is not found
+            TemplateException: If there's an error rendering the template
+        """
+        return self._engine.render_document(category, template_name, data)
+
+    def export_template_to_pdf(self, category, template_name, data, output_path, config=None):
+        """
+        Export a template to PDF.
+
+        Args:
+            category (str): The category of the template
+            template_name (str): The name of the template
+            data (dict): The data for the template
+            output_path (str): Path for the output PDF
+            config (dict, optional): Configuration for the template
+
+        Returns:
+            str: Path to the generated PDF
+
+        Raises:
+            TemplateNotFoundException: If template is not found
+            TemplateException: If there's an error exporting to PDF
+        """
         return self._engine.export_to_pdf(category, template_name, data, output_path)
+
+    def validate_template_data(self, category, template_name, data):
+        """
+        Validate template data.
+
+        Args:
+            category (str): The category of the template
+            template_name (str): The name of the template
+            data (dict): The data to validate
+
+        Returns:
+            bool: True if data is valid
+
+        Raises:
+            ValidationException: If data is invalid
+        """
+        template = self._engine.create_template(category, template_name, data)
+        return True  # If no exception is raised, data is valid
+
+    def get_template_info(self, category, template_name):
+        """
+        Get information about a template.
+
+        Args:
+            category (str): The category of the template
+            template_name (str): The name of the template
+
+        Returns:
+            dict: Template information
+        """
+        return self._engine.get_template_info(category, template_name)
