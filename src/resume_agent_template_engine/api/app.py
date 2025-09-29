@@ -551,17 +551,67 @@ def parse_yaml_data(yaml_content: str) -> dict[str, Any]:
 
 
 def validate_date_format(date_str: str) -> bool:
-    """Validate date format (YYYY-MM or YYYY-MM-DD)"""
+    """Validate date format (YYYY-MM, MM-YYYY, YYYY-MM-DD, or MM-DD-YYYY)"""
     try:
-        if len(date_str) == 7:  # YYYY-MM
-            datetime.strptime(date_str, "%Y-%m")
-        elif len(date_str) == 10:  # YYYY-MM-DD
-            datetime.strptime(date_str, "%Y-%m-%d")
+        if len(date_str) == 7:  # YYYY-MM or MM-YYYY
+            try:
+                datetime.strptime(date_str, "%Y-%m")
+                return True
+            except ValueError:
+                try:
+                    datetime.strptime(date_str, "%m-%Y")
+                    return True
+                except ValueError:
+                    return False
+        elif len(date_str) == 10:  # YYYY-MM-DD or MM-DD-YYYY
+            try:
+                datetime.strptime(date_str, "%Y-%m-%d")
+                return True
+            except ValueError:
+                try:
+                    datetime.strptime(date_str, "%m-%d-%Y")
+                    return True
+                except ValueError:
+                    return False
         else:
             return False
-        return True
     except ValueError:
         return False
+
+
+def validate_dates_in_list(data_list: list[dict[str, Any]], section_name: str, date_fields: list[str]):
+    """
+    Reusable validation function for date fields in a list of items.
+
+    Args:
+        data_list: List of items containing date fields
+        section_name: Name of the section (e.g., 'experience', 'education')
+        date_fields: List of date field names to validate
+    """
+    for i, item in enumerate(data_list):
+        for field in date_fields:
+            if field in item and item[field] and item[field] != "Present":
+                if not validate_date_format(item[field]):
+                    raise ValidationException(
+                        ErrorCode.VAL006,
+                        field_path=f"{section_name}[{i}].{field}",
+                        context={"date": item[field]},
+                    )
+
+
+def normalize_field_names(data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Normalize field names to match expected schema.
+    Handles common variations like 'title' -> 'position'.
+    """
+    # Handle experience field name variations
+    if "experience" in data and isinstance(data["experience"], list):
+        for exp in data["experience"]:
+            # Support both 'title' and 'position'
+            if "title" in exp and "position" not in exp:
+                exp["position"] = exp["title"]
+
+    return data
 
 
 def validate_resume_data(data: dict[str, Any]):
@@ -570,6 +620,9 @@ def validate_resume_data(data: dict[str, Any]):
         raise ValidationException(
             ErrorCode.VAL001, field_path="personalInfo", context={"section": "root"}
         )
+
+    # Normalize field names before validation
+    data = normalize_field_names(data)
 
     try:
         PersonalInfoModel(**data["personalInfo"])
@@ -580,25 +633,13 @@ def validate_resume_data(data: dict[str, Any]):
             ErrorCode.VAL002, field_path=error_context["field"], context=error_context
         )
 
-    # Validate dates in experience
+    # Validate dates in experience using reusable function
     if "experience" in data and isinstance(data["experience"], list):
-        for i, exp in enumerate(data["experience"]):
-            if "startDate" in exp and not validate_date_format(exp["startDate"]):
-                raise ValidationException(
-                    ErrorCode.VAL006,
-                    field_path=f"experience[{i}].startDate",
-                    context={"date": exp["startDate"]},
-                )
-            if (
-                "endDate" in exp
-                and exp["endDate"] != "Present"
-                and not validate_date_format(exp["endDate"])
-            ):
-                raise ValidationException(
-                    ErrorCode.VAL006,
-                    field_path=f"experience[{i}].endDate",
-                    context={"date": exp["endDate"]},
-                )
+        validate_dates_in_list(data["experience"], "experience", ["startDate", "endDate"])
+
+    # Validate dates in education using reusable function
+    if "education" in data and isinstance(data["education"], list):
+        validate_dates_in_list(data["education"], "education", ["startDate", "endDate", "graduationDate"])
 
 
 def ultra_validate_and_normalize_data(data: dict[str, Any]) -> dict[str, Any]:
@@ -760,20 +801,23 @@ async def generate_document(
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
 
+        # Convert enum to string value
+        doc_type_str = request.document_type.value if hasattr(request.document_type, 'value') else str(request.document_type)
+
         # Validate document type
-        if request.document_type not in available_templates:
+        if doc_type_str not in available_templates:
             raise InvalidParameterException(
                 parameter="document_type",
-                value=request.document_type,
+                value=doc_type_str,
                 context={"available_types": list(available_templates.keys())},
             )
 
         # Validate template exists
-        if request.template not in available_templates[request.document_type]:
+        if request.template not in available_templates[doc_type_str]:
             raise TemplateNotFoundException(
                 template_name=request.template,
-                document_type=request.document_type,
-                available_templates=available_templates[request.document_type],
+                document_type=doc_type_str,
+                available_templates=available_templates[doc_type_str],
             )
 
         # Validate format (currently only PDF is supported)
@@ -791,7 +835,7 @@ async def generate_document(
         try:
             # Generate the document using the validated data
             engine.export_to_pdf(
-                request.document_type, request.template, data_to_use, output_path
+                doc_type_str, request.template, data_to_use, output_path
             )
 
             # Determine filename based on document type
@@ -800,7 +844,7 @@ async def generate_document(
                 .get("name", "output")
                 .replace(" ", "_")
             )
-            filename = f"{request.document_type}_{person_name}.pdf"
+            filename = f"{doc_type_str}_{person_name}.pdf"
 
             # Add cleanup task if requested
             if request.clean_up:
@@ -865,20 +909,23 @@ async def generate_document_from_yaml(
         engine = TemplateEngine()
         available_templates = engine.get_available_templates()
 
+        # Convert enum to string value
+        doc_type_str = request.document_type.value if hasattr(request.document_type, 'value') else str(request.document_type)
+
         # Validate document type
-        if request.document_type not in available_templates:
+        if doc_type_str not in available_templates:
             raise InvalidParameterException(
                 parameter="document_type",
-                value=request.document_type,
+                value=doc_type_str,
                 context={"available_types": list(available_templates.keys())},
             )
 
         # Validate template exists
-        if request.template not in available_templates[request.document_type]:
+        if request.template not in available_templates[doc_type_str]:
             raise TemplateNotFoundException(
                 template_name=request.template,
-                document_type=request.document_type,
-                available_templates=available_templates[request.document_type],
+                document_type=doc_type_str,
+                available_templates=available_templates[doc_type_str],
             )
 
         # Validate format (currently only PDF is supported)
@@ -896,7 +943,7 @@ async def generate_document_from_yaml(
         try:
             # Generate the document using the validated data
             engine.export_to_pdf(
-                request.document_type, request.template, data_to_use, output_path
+                doc_type_str, request.template, data_to_use, output_path
             )
 
             # Determine filename based on document type
@@ -905,7 +952,7 @@ async def generate_document_from_yaml(
                 .get("name", "output")
                 .replace(" ", "_")
             )
-            filename = f"{request.document_type}_{person_name}.pdf"
+            filename = f"{doc_type_str}_{person_name}.pdf"
 
             # Add cleanup task if requested
             if request.clean_up:
