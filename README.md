@@ -49,62 +49,65 @@ resume-agent-template-engine/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
 └── run.py
 ```
 
 ## System Requirements
 
-- Python 3.8+
+- Python 3.9+
+- [uv](https://docs.astral.sh/uv/) package manager
 - LaTeX distribution (MiKTeX, TeX Live, or MacTeX)
-- Required Python packages (see requirements.txt)
 
 ## Installation
 
 ### Quick Setup (Recommended for Developers)
 
-1. Clone the repository:
+1. Install uv (if not already installed):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Clone the repository:
    ```bash
    git clone https://github.com/taleye-com/resume-agent-template-engine
    cd resume-agent-template-engine
    ```
 
-2. Run the development setup script:
+3. Run the development setup script:
    ```bash
    chmod +x setup-dev.sh
    ./setup-dev.sh
    ```
 
 This script will:
-- Create a virtual environment
-- Install all dependencies
+- Sync all dependencies with uv
 - Set up pre-commit hooks
 - Format the code
 - Run tests to ensure everything works
 
 ### Manual Setup
 
-1. Clone the repository:
+1. Install uv:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Clone the repository:
    ```bash
    git clone https://github.com/taleye-com/resume-agent-template-engine
    cd resume-agent-template-engine
    ```
 
-2. Create and activate a virtual environment:
+3. Sync dependencies with uv:
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   pip install -r requirements-dev.txt  # For development
+   uv sync
    ```
 
 4. Install pre-commit hooks (for development):
    ```bash
-   pre-commit install
+   uv run pre-commit install
    ```
 
 5. Install LaTeX:
@@ -122,11 +125,8 @@ This script will:
 Launch the user-friendly web interface:
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
 # Launch the UI
-python run_ui.py
+uv run python run.py --ui
 ```
 
 Navigate to `http://localhost:8502` for an intuitive form-based interface to:
@@ -144,27 +144,27 @@ The CLI supports both JSON and YAML input formats:
 
 ```bash
 # Generate sample data files
-PYTHONPATH=src python -m resume_agent_template_engine.cli sample resume data.json
-PYTHONPATH=src python -m resume_agent_template_engine.cli sample resume data.yaml
+uv run python -m resume_agent_template_engine.cli sample resume data.json
+uv run python -m resume_agent_template_engine.cli sample resume data.yaml
 
 # Generate PDF from JSON
-PYTHONPATH=src python -m resume_agent_template_engine.cli generate resume classic data.json output.pdf
+uv run python -m resume_agent_template_engine.cli generate resume classic data.json output.pdf
 
 # Generate PDF from YAML
-PYTHONPATH=src python -m resume_agent_template_engine.cli generate resume classic data.yaml output.pdf
+uv run python -m resume_agent_template_engine.cli generate resume classic data.yaml output.pdf
 
 # List available templates
-PYTHONPATH=src python -m resume_agent_template_engine.cli list
+uv run python -m resume_agent_template_engine.cli list
 
 # Get template information
-PYTHONPATH=src python -m resume_agent_template_engine.cli info resume classic
+uv run python -m resume_agent_template_engine.cli info resume classic
 ```
 
 ### Option 3: API (For Developers and Integration)
 
 1. Start the server:
    ```bash
-   python run.py
+   uv run python run.py --api
    ```
 
 2. Access the API:

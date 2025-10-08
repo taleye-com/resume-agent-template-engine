@@ -27,6 +27,9 @@ env/
 venv/
 ENV/
 
+# uv
+.python-version
+
 # IDE
 .idea/
 .vscode/

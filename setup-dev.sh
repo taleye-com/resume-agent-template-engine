@@ -6,55 +6,43 @@ set -e  # Exit on any error
 
 echo "🚀 Setting up development environment..."
 
-# Check if python3 is available
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is required but not installed."
+# Check if uv is available
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv is required but not installed."
+    echo "Install it with: curl -LsSf https://astral.sh/uv/install.sh | sh"
     exit 1
 fi
 
-echo "✅ Python 3 found"
+echo "✅ uv found"
 
-# Create virtual environment if it doesn't exist
-if [ ! -d ".venv" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv .venv
-fi
-
-# Activate virtual environment
-echo "🔌 Activating virtual environment..."
-source .venv/bin/activate
-
-# Upgrade pip
-echo "⬆️  Upgrading pip..."
-pip install --upgrade pip
-
-# Install dependencies
-echo "📚 Installing dependencies..."
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+# Sync dependencies with uv
+echo "📦 Syncing dependencies with uv..."
+uv sync
 
 # Install pre-commit hooks
 echo "🔗 Installing pre-commit hooks..."
-pip install pre-commit
-pre-commit install
+uv run pre-commit install
 
 # Format code
 echo "✨ Formatting code..."
-black src/ tests/
+uv run black src/ tests/
 
 # Run tests to ensure everything works
 echo "🧪 Running tests..."
 cd src
-PYTHONPATH=$PYTHONPATH:$(pwd) pytest ../tests/ --maxfail=5
+uv run pytest ../tests/ --maxfail=5
 cd ..
 
 echo "🎉 Development environment setup complete!"
 echo ""
-echo "To activate the environment, run:"
-echo "source .venv/bin/activate"
-echo ""
 echo "To run the application:"
-echo "python run.py"
+echo "uv run python run.py"
 echo ""
 echo "To run tests:"
-echo "cd src && PYTHONPATH=\$PYTHONPATH:\$(pwd) pytest ../tests/" 
+echo "cd src && uv run pytest ../tests/"
+echo ""
+echo "To add dependencies:"
+echo "uv add <package-name>"
+echo ""
+echo "To add dev dependencies:"
+echo "uv add --dev <package-name>" 
