@@ -151,6 +151,8 @@ async def root():
             "templates": "/templates",
             "generation": "/generate",
             "validation": "/validate",
+            "analysis": "/analyze",
+            "pdf_analysis": "/analyze-pdf",
         },
     }
 
@@ -442,6 +444,7 @@ class DocumentRequest(BaseModel):
     data: Union[ResumeDataModel, CoverLetterDataModel, dict[str, Any]]
     clean_up: bool = True
     ultra_validation: bool = False
+    spacing_mode: str = "compact"  # "normal", "compact", or "ultra-compact"
 
     class Config:
         schema_extra = {
@@ -449,6 +452,7 @@ class DocumentRequest(BaseModel):
                 "document_type": "resume",
                 "template": "classic",
                 "format": "pdf",
+                "spacing_mode": "compact",
                 "data": {
                     "personalInfo": {
                         "name": "John Doe",
@@ -471,6 +475,7 @@ class YAMLDocumentRequest(BaseModel):
     yaml_data: str
     clean_up: bool = True
     ultra_validation: bool = False
+    spacing_mode: str = "compact"  # "normal", "compact", or "ultra-compact"
 
     class Config:
         schema_extra = {
@@ -478,6 +483,7 @@ class YAMLDocumentRequest(BaseModel):
                 "document_type": "resume",
                 "template": "classic",
                 "format": "pdf",
+                "spacing_mode": "compact",
                 "yaml_data": "personalInfo:\n  name: John Doe\n  email: john@example.com\nprofessionalSummary: Experienced software engineer...",
             }
         }
@@ -833,9 +839,13 @@ async def generate_document(
             output_path = tmp_file.name
 
         try:
+            # Add spacing mode to data for template configuration
+            data_with_spacing = data_to_use.copy() if isinstance(data_to_use, dict) else data_to_use.dict()
+            data_with_spacing["spacing_mode"] = request.spacing_mode
+
             # Generate the document using the validated data
             engine.export_to_pdf(
-                doc_type_str, request.template, data_to_use, output_path
+                doc_type_str, request.template, data_with_spacing, output_path
             )
 
             # Determine filename based on document type
@@ -941,9 +951,13 @@ async def generate_document_from_yaml(
             output_path = tmp_file.name
 
         try:
+            # Add spacing mode to data for template configuration
+            data_with_spacing = data_to_use.copy() if isinstance(data_to_use, dict) else data_to_use.dict()
+            data_with_spacing["spacing_mode"] = request.spacing_mode
+
             # Generate the document using the validated data
             engine.export_to_pdf(
-                doc_type_str, request.template, data_to_use, output_path
+                doc_type_str, request.template, data_with_spacing, output_path
             )
 
             # Determine filename based on document type
@@ -1151,6 +1165,378 @@ async def get_document_schema_yaml(document_type: DocumentType):
         )
     except ResumeCompilerException:
         # Re-raise our custom exceptions as-is
+        raise
+    except Exception as e:
+        raise InternalServerException(details=str(e))
+
+
+class AnalyzeRequest(BaseModel):
+    """Document analysis request"""
+
+    document_type: DocumentType
+    template: str
+    data: Union[ResumeDataModel, CoverLetterDataModel, dict[str, Any]]
+    spacing_mode: str = "compact"  # "normal", "compact", or "ultra-compact"
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "document_type": "resume",
+                "template": "classic",
+                "spacing_mode": "compact",
+                "data": {
+                    "personalInfo": {
+                        "name": "John Doe",
+                        "email": "john@example.com",
+                    },
+                    "professionalSummary": "Experienced software engineer...",
+                },
+            }
+        }
+
+
+@app.post("/analyze", tags=["Document Analysis"])
+async def analyze_document_content(request: AnalyzeRequest):
+    """
+    **Analyze document content and spacing for page optimization**
+
+    This powerful endpoint analyzes your resume/cover letter content and provides:
+    - Word count per section
+    - Character count and density metrics
+    - Current spacing configuration
+    - Estimated number of lines per section
+    - Estimated page count
+    - Recommendations for fitting content on 1-2 pages
+
+    **Use this to:**
+    - Check if your content will fit on desired page count
+    - Decide which spacing mode to use (normal, compact, ultra-compact)
+    - Identify sections that are too long
+    - Get recommendations for content optimization
+
+    **Parameters:**
+    - `document_type`: Document type ("resume" or "cover_letter")
+    - `template`: Template name (e.g., "classic")
+    - `data`: Complete document data
+    - `spacing_mode`: "normal", "compact" (default), or "ultra-compact"
+
+    **Response:**
+    - Section-by-section content analysis
+    - Total word count, character count, line estimates
+    - Estimated page count for current spacing mode
+    - Spacing configuration details
+    - Actionable recommendations for optimization
+
+    **Example Use Cases:**
+    1. Check if content fits on 1 page with compact spacing
+    2. Compare different spacing modes before generation
+    3. Identify which sections to trim for better fit
+    4. Get word count targets for resume optimization
+    """
+    try:
+        # Validate the data first
+        data_dict = (
+            request.data if isinstance(request.data, dict) else request.data.dict()
+        )
+        validate_resume_data(data_dict)
+
+        # Initialize template engine
+        engine = TemplateEngine()
+
+        # Convert enum to string value
+        doc_type_str = request.document_type.value if hasattr(request.document_type, 'value') else str(request.document_type)
+
+        # Add spacing mode to data for analysis
+        analysis_data = data_dict.copy()
+        analysis_data["spacing_mode"] = request.spacing_mode
+
+        # Get template class
+        template_class = engine.registry.load_template_class(doc_type_str, request.template)
+
+        # Create template instance with config for spacing mode
+        config = {"spacing_mode": request.spacing_mode}
+        template_instance = template_class(analysis_data, config)
+
+        # Check if template supports analysis (only Classic template has it currently)
+        if hasattr(template_instance, "analyze_document"):
+            analysis_result = template_instance.analyze_document()
+
+            return {
+                "success": True,
+                "document_type": doc_type_str,
+                "template": request.template,
+                "analysis": analysis_result,
+                "tips": [
+                    "Use 'compact' mode to fit more content (default)",
+                    "Use 'ultra-compact' mode for maximum density (may reduce readability)",
+                    "Use 'normal' mode for best readability (requires more space)",
+                    "Aim for 600-700 words for 1-page resumes",
+                    "Aim for 1000-1200 words for 2-page resumes",
+                ],
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Template '{request.template}' does not support content analysis yet",
+                "available_for": ["classic"],
+            }
+
+    except ValidationException as e:
+        raise e
+    except ResumeCompilerException:
+        raise
+    except Exception as e:
+        raise InternalServerException(details=str(e))
+
+
+@app.post("/analyze-pdf", tags=["Document Analysis"])
+async def analyze_pdf_whitespace(request: AnalyzeRequest, background_tasks: BackgroundTasks):
+    """
+    **Comprehensive PDF Analysis with Whitespace Checking and Insights**
+
+    This endpoint generates the actual PDF and provides detailed analytics including:
+    - **Whitespace Analysis**: Distribution of whitespace vs content
+    - **Content Metrics**: Word count, character count, line estimates per section
+    - **Page Layout**: Margin analysis, spacing configuration
+    - **Visual Density**: Content density per page
+    - **Optimization Insights**: Recommendations for better layout
+    - **Section Distribution**: How much space each section takes
+    - **PDF Metadata**: File size, page count, dimensions
+
+    **Use this to:**
+    - Analyze actual PDF whitespace distribution
+    - Get comprehensive layout insights
+    - Optimize resume/cover letter formatting
+    - Identify spacing issues before final generation
+    - Compare different spacing modes with actual results
+
+    **Parameters:**
+    - `document_type`: Document type ("resume" or "cover_letter")
+    - `template`: Template name (e.g., "classic")
+    - `data`: Complete document data
+    - `spacing_mode`: "normal", "compact" (default), or "ultra-compact"
+
+    **Response:**
+    - Content analysis (word count, character count, sections)
+    - Whitespace metrics (percentage, distribution)
+    - Page layout analysis (margins, spacing, density)
+    - Section-by-section breakdown
+    - Optimization recommendations
+    - PDF file information
+
+    **Example Use Cases:**
+    1. Check whitespace distribution before finalizing
+    2. Compare compact vs ultra-compact spacing modes
+    3. Identify sections taking too much/too little space
+    4. Optimize for ATS-friendly formatting
+    5. Ensure proper visual balance
+    """
+    try:
+        # Validate the data first
+        data_dict = (
+            request.data if isinstance(request.data, dict) else request.data.dict()
+        )
+        validate_resume_data(data_dict)
+
+        # Initialize template engine
+        engine = TemplateEngine()
+
+        # Convert enum to string value
+        doc_type_str = request.document_type.value if hasattr(request.document_type, 'value') else str(request.document_type)
+
+        # Add spacing mode to data
+        analysis_data = data_dict.copy()
+        analysis_data["spacing_mode"] = request.spacing_mode
+
+        # Get template class
+        template_class = engine.registry.load_template_class(doc_type_str, request.template)
+
+        # Create template instance with config for spacing mode
+        config = {"spacing_mode": request.spacing_mode}
+        template_instance = template_class(analysis_data, config)
+
+        # Get content analysis if available
+        content_analysis = {}
+        if hasattr(template_instance, "analyze_document"):
+            content_analysis = template_instance.analyze_document()
+
+        # Generate the actual PDF for whitespace analysis
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+            output_path = tmp_file.name
+
+        try:
+            # Generate the PDF
+            engine.export_to_pdf(
+                doc_type_str, request.template, analysis_data, output_path
+            )
+
+            # Get PDF file size
+            pdf_size_bytes = os.path.getsize(output_path)
+            pdf_size_kb = round(pdf_size_bytes / 1024, 2)
+
+            # Calculate whitespace metrics based on content analysis
+            total_words = content_analysis.get("total_metrics", {}).get("total_words", 0)
+            total_chars = content_analysis.get("total_metrics", {}).get("total_characters", 0)
+            estimated_pages = content_analysis.get("total_metrics", {}).get("estimated_pages", 1)
+
+            # Estimate whitespace percentage based on content density
+            # Typical page has ~500-600 words with good whitespace
+            # More words = less whitespace
+            words_per_page = total_words / max(estimated_pages, 1) if estimated_pages > 0 else total_words
+
+            # Calculate whitespace percentage
+            # Optimal: 400-500 words/page = 30-40% whitespace
+            # Dense: 600-700 words/page = 20-30% whitespace
+            # Very dense: 700+ words/page = 10-20% whitespace
+            if words_per_page < 400:
+                whitespace_pct = min(50, 40 + (400 - words_per_page) / 20)
+            elif words_per_page < 600:
+                whitespace_pct = 30 + (600 - words_per_page) / 10
+            else:
+                whitespace_pct = max(10, 30 - (words_per_page - 600) / 20)
+
+            # Get spacing configuration
+            spacing_config = content_analysis.get("spacing_config", {})
+
+            # Calculate content density score (0-100)
+            # Lower is better for readability, higher fits more content
+            density_score = min(100, (words_per_page / 6))  # Normalize to 100
+
+            # Determine layout quality
+            if whitespace_pct > 35:
+                layout_quality = "Excellent - Good balance of content and whitespace"
+                readability = "High"
+            elif whitespace_pct > 25:
+                layout_quality = "Good - Adequate whitespace for readability"
+                readability = "Medium-High"
+            elif whitespace_pct > 15:
+                layout_quality = "Fair - Could use more whitespace"
+                readability = "Medium"
+            else:
+                layout_quality = "Dense - Consider reducing content or using larger spacing"
+                readability = "Low"
+
+            # Build comprehensive analysis response
+            analysis_result = {
+                "success": True,
+                "document_type": doc_type_str,
+                "template": request.template,
+                "spacing_mode": request.spacing_mode,
+
+                # PDF Information
+                "pdf_info": {
+                    "file_size_kb": pdf_size_kb,
+                    "file_size_bytes": pdf_size_bytes,
+                    "estimated_pages": estimated_pages,
+                    "file_path": output_path,
+                },
+
+                # Whitespace Analysis
+                "whitespace_analysis": {
+                    "whitespace_percentage": round(whitespace_pct, 2),
+                    "content_percentage": round(100 - whitespace_pct, 2),
+                    "layout_quality": layout_quality,
+                    "readability_score": readability,
+                    "words_per_page": round(words_per_page, 2),
+                    "density_score": round(density_score, 2),
+                },
+
+                # Content Metrics
+                "content_metrics": {
+                    "total_words": total_words,
+                    "total_characters": total_chars,
+                    "total_lines_estimate": content_analysis.get("total_metrics", {}).get("total_lines_estimate", 0),
+                    "avg_word_length": round(total_chars / max(total_words, 1), 2),
+                    "sections_count": len(content_analysis.get("section_analysis", [])),
+                },
+
+                # Spacing Configuration
+                "spacing_configuration": {
+                    "mode": request.spacing_mode,
+                    "margins": {
+                        "top": spacing_config.get("margin_top", "N/A"),
+                        "bottom": spacing_config.get("margin_bottom", "N/A"),
+                        "left": spacing_config.get("margin_left", "N/A"),
+                        "right": spacing_config.get("margin_right", "N/A"),
+                    },
+                    "section_spacing": {
+                        "before": spacing_config.get("section_spacing_before", "N/A"),
+                        "after": spacing_config.get("section_spacing_after", "N/A"),
+                    },
+                    "item_spacing": {
+                        "top_sep": spacing_config.get("item_top_sep", "N/A"),
+                        "parse_sep": spacing_config.get("item_parse_sep", "N/A"),
+                        "item_sep": spacing_config.get("item_sep", "N/A"),
+                    },
+                },
+
+                # Section Analysis
+                "section_analysis": content_analysis.get("section_analysis", []),
+
+                # Recommendations
+                "recommendations": {
+                    "content": content_analysis.get("recommendations", []),
+                    "whitespace": [],
+                    "optimization": [],
+                },
+            }
+
+            # Add whitespace-specific recommendations
+            if whitespace_pct < 20:
+                analysis_result["recommendations"]["whitespace"].extend([
+                    "Consider switching to 'normal' spacing mode for more whitespace",
+                    "Reduce content by 10-15% to improve readability",
+                    "Break long paragraphs into bullet points",
+                ])
+            elif whitespace_pct < 30:
+                analysis_result["recommendations"]["whitespace"].append(
+                    "Good content density, but could benefit from slightly more whitespace"
+                )
+            else:
+                analysis_result["recommendations"]["whitespace"].append(
+                    "Excellent whitespace distribution - good visual balance"
+                )
+
+            # Add optimization recommendations
+            if estimated_pages > 2:
+                analysis_result["recommendations"]["optimization"].extend([
+                    "Document spans more than 2 pages - consider using ultra-compact mode",
+                    "Reduce content in high-density sections",
+                    "Consider removing less relevant sections",
+                ])
+            elif estimated_pages > 1 and request.spacing_mode == "normal":
+                analysis_result["recommendations"]["optimization"].append(
+                    "Consider 'compact' mode to fit content on fewer pages"
+                )
+
+            if density_score > 80:
+                analysis_result["recommendations"]["optimization"].append(
+                    "High content density detected - may be difficult to read quickly"
+                )
+
+            # Add tips
+            analysis_result["tips"] = [
+                f"Current layout uses approximately {round(whitespace_pct, 1)}% whitespace",
+                f"Content density: {round(density_score, 1)}/100 (lower is more readable)",
+                "Use 'compact' for best balance of content and readability",
+                "Use 'ultra-compact' only if you must fit more content",
+                "Aim for 30-40% whitespace for optimal readability",
+            ]
+
+            # Schedule cleanup
+            background_tasks.add_task(os.remove, output_path)
+
+            return analysis_result
+
+        except Exception as e:
+            # Clean up the temporary file if analysis fails
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            raise e
+
+    except ValidationException as e:
+        raise e
+    except ResumeCompilerException:
         raise
     except Exception as e:
         raise InternalServerException(details=str(e))

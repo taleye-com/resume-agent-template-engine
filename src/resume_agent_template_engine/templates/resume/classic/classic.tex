@@ -3,12 +3,16 @@
 % ------------------------------------------------------------------------------
 % PACKAGES AND CONFIGURATIONS
 % ------------------------------------------------------------------------------
+
+% Spacing mode: normal or compact (set via template data)
+{{spacing_mode}}
+
 \usepackage[
     ignoreheadfoot,
-    top=0.8cm,
-    bottom=0.8cm,
-    left=0.8cm,
-    right=0.8cm,
+    top=\MarginTop,
+    bottom=\MarginBottom,
+    left=\MarginLeft,
+    right=\MarginRight,
     footskip=0.5cm
 ]{geometry}
 \usepackage{titlesec}
@@ -57,16 +61,16 @@
 \pagenumbering{gobble}
 
 \titleformat{\section}{\needspace{4\baselineskip}\bfseries\large}{}{0pt}{}[\vspace{1pt}\titlerule]
-\titlespacing{\section}{-1pt}{0.3cm}{0.2cm}
+\titlespacing{\section}{-1pt}{\SectionSpacingBefore}{\SectionSpacingAfter}
 
 \renewcommand\labelitemi{$\vcenter{\hbox{\small$\bullet$}}$}
 
 \newenvironment{highlights}{
     \begin{itemize}[
-        topsep=0.10 cm,
-        parsep=0.10 cm,
+        topsep=\ItemTopSep,
+        parsep=\ItemParseSep,
         partopsep=0pt,
-        itemsep=0pt,
+        itemsep=\ItemSep,
         leftmargin=10pt
     ]
 }{
@@ -103,25 +107,65 @@
     % HEADER
     %========================
     {{personal_info}}
-    \vspace{0.2cm}
+    \vspace{0.1cm}
 
     %========================
     % DYNAMIC SECTIONS
     %========================
     {{professional_summary}}
 
-    {{education}}
+    {{core_competencies}}
+
+    {{leadership_experience}}
 
     {{experience}}
 
+    {{education}}
+
+    {{relevant_coursework}}
+
+    {{technical_skills}}
+
+    {{skills_matrix}}
+
+    {{technologies_and_skills}}
+
     {{projects}}
 
+    {{open_source_contributions}}
+
+    {{research_experience}}
+
+    {{publications}}
+
+    {{technical_writing}}
+
     {{articles_and_publications}}
+
+    {{speaking_engagements}}
+
+    {{awards_and_honors}}
 
     {{achievements}}
 
     {{certifications}}
 
-    {{technologies_and_skills}}
+    {{teaching_experience}}
+
+    {{mentorship}}
+
+    {{volunteering}}
+
+    {{languages}}
+
+    {{professional_affiliations}}
+
+    {{patents}}
+
+    {{industry_expertise}}
+
+    {{referral}}
+
+    {{references}}
 
 \end{document} 
