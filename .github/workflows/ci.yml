@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
     - uses: actions/checkout@v4
     
@@ -42,7 +42,7 @@ jobs:
         PYTHONPATH=$PYTHONPATH:$(pwd) mypy --namespace-packages --ignore-missing-imports resume_agent_template_engine/ || true
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: lint
     steps:
     - uses: actions/checkout@v4
