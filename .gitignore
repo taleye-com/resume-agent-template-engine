@@ -48,6 +48,10 @@ htmlcov/
 # Internal scripts and tools
 .scripts/
 
+# Cloudflare Worker
+cloudflare/node_modules/
+cloudflare/worker-configuration.d.ts
+
 # OS specific
 .DS_Store
-Thumbs.db 
+Thumbs.db

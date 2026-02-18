@@ -1,0 +1,64 @@
+# Dockerfile optimized for Cloudflare Containers
+# Single-stage build for edge deployment (1 vCPU, 6 GiB RAM)
+
+FROM --platform=linux/amd64 ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies with minimal footprint
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-xetex \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    curl \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+
+# Install uv package manager
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
+
+WORKDIR /app
+
+# Copy dependency files and source
+COPY pyproject.toml uv.lock ./
+COPY src/ /app/src/
+
+# Install Python dependencies
+RUN uv sync --frozen --no-dev
+
+# Copy runtime config
+COPY gunicorn.conf.py /app/
+COPY .env.example /app/.env
+
+# Create necessary directories
+RUN mkdir -p /var/log/resume-api /var/run/resume-api /tmp/resume-temp
+
+# Environment variables
+ENV PYTHONPATH=/app/src
+ENV PATH="/app/.venv/bin:${PATH}"
+ENV PYTHONUNBUFFERED=1
+ENV ENVIRONMENT=production
+
+# Cloudflare-specific: no Redis available
+ENV CACHE_ENABLED=false
+ENV RATE_LIMIT_ENABLED=false
+
+# Tuned for 1 vCPU Cloudflare container
+ENV GUNICORN_WORKERS=2
+ENV GUNICORN_THREADS=2
+
+EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8501/health || exit 1
+
+CMD ["gunicorn", "resume_agent_template_engine.api.app:app", \
+     "--config", "gunicorn.conf.py", \
+     "--bind", "0.0.0.0:8501"]
