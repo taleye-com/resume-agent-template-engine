@@ -3,10 +3,15 @@
   "name": "resume-template-engine",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-01",
-  "containers": {
-    "max_instances": 5,
-    "instance_type": "standard-2"
-  },
+  "containers": [
+    {
+      "class_name": "ResumeEngine",
+      "image": "../Dockerfile.cloudflare",
+      "image_build_context": "../",
+      "max_instances": 5,
+      "instance_type": "standard-2"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
