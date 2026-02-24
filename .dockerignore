@@ -1,82 +1,55 @@
-# UI Components (exclude from Docker build)
-src/resume_agent_template_engine/ui/
-
-# Development files
-.git/
+# Git files
+.git
 .gitignore
-*.md
-!README.md
-.venv/
-venv/
-env/
-.env*
 
-# IDE and editor files
+# Python cache
+__pycache__
+*.py[cod]
+.Python
+*.egg-info
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv
+ENV/
+
+# IDE
 .vscode/
 .idea/
 *.swp
-*.swo
-*~
+
+# OS files
 .DS_Store
 
-# Testing
+# Tests
 tests/
 .pytest_cache/
-.coverage
-htmlcov/
-.tox/
 
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Documentation
-docs/
-*.rst
-CONTRIBUTING.md
-CODE_OF_CONDUCT.md
-SECURITY.md
-CI_FIXES.md
-FUTURE_IMPROVEMENTS.md
-DEPLOY.md
-
-# Development scripts
-setup-dev.sh
-check-status.sh
-build.sh
-
-# Output and temporary files
-output/
-temp/
-tmp/
-*.tmp
+# Logs
+logs/
 *.log
 
-# Docker files (avoid recursive copying)
-Dockerfile*
-docker-compose*.yml
-.dockerignore
+# Temporary files
+tmp/
+.cache/
+
+# Development files
+.env.local
 
 # CI/CD
 .github/
-.gitlab-ci.yml
-.travis.yml
-azure-pipelines.yml
+
+# Docker
+.dockerignore
+
+# Output
+output/
+*.pdf
+
+# Other
+*.pid
+
+# Cloudflare Worker
+cloudflare/
