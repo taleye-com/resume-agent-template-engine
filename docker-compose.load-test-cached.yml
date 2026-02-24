@@ -1,0 +1,55 @@
+# Docker Compose for Load Testing WITH CACHING
+# 1 CPU, 2GB memory + Redis cache for 10-100x speedup on repeat requests
+
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis-loadtest
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - loadtest-network
+
+  # API Server with caching enabled
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: resume-api-loadtest-cached
+    ports:
+      - "8501:8501"
+    environment:
+      - ENVIRONMENT=production
+      - CACHE_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PDF_CACHE_TTL=86400
+      - RATE_LIMIT_ENABLED=false
+      - GUNICORN_WORKERS=4
+      - GUNICORN_THREADS=2
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - loadtest-network
+
+networks:
+  loadtest-network:
+    driver: bridge

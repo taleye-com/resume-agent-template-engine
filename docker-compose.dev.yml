@@ -1,0 +1,38 @@
+# Docker Compose for Development
+# Lightweight setup with auto-reload
+
+version: '3.8'
+
+services:
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - dev-network
+
+  # API with auto-reload
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "8501:8501"
+    environment:
+      - ENVIRONMENT=development
+      - CACHE_ENABLED=true
+      - REDIS_HOST=redis
+      - RATE_LIMIT_ENABLED=false
+    volumes:
+      - ./src:/app/src
+      - ./logs:/var/log/resume-api
+    depends_on:
+      - redis
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge

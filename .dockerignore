@@ -51,5 +51,3 @@ output/
 # Other
 *.pid
 
-# Cloudflare Worker
-cloudflare/

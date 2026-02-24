@@ -1,0 +1,45 @@
+# Docker Compose for Load Testing
+# Configured for 1 CPU and 2GB memory to benchmark performance limits
+
+version: '3.8'
+
+services:
+  # API Server - Limited to 1 CPU and 2GB memory
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: resume-api-loadtest
+    ports:
+      - "8501:8501"
+    environment:
+      - ENVIRONMENT=production
+      - CACHE_ENABLED=false
+      - RATE_LIMIT_ENABLED=false
+      - GUNICORN_WORKERS=2
+      - GUNICORN_THREADS=2
+      - MAX_WORKERS=2
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - /tmp/resume-loadtest:/tmp/resume-temp
+    networks:
+      - loadtest-network
+
+networks:
+  loadtest-network:
+    driver: bridge

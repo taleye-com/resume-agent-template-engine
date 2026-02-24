@@ -1,23 +1,147 @@
+# Docker Compose configuration for Resume Template Engine
+# Handles 10,000+ concurrent users with full stack deployment
+
+version: '3.8'
+
 services:
-  resume-api:
+  # Redis - Cache and message broker
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+  # API Server - FastAPI with Gunicorn
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        BUILDKIT_PROGRESS: plain
+      target: production
+    container_name: resume-api
     ports:
       - "8501:8501"
-    volumes:
-      - ./output:/app/output
-      - ./src/resume_agent_template_engine/templates:/app/templates
-    restart: unless-stopped
     environment:
-      - TZ=UTC
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app
+      - ENVIRONMENT=production
+      - CACHE_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_MAX_CONNECTIONS=200
+      - PDF_CACHE_TTL=86400
+      - LATEX_CACHE_TTL=43200
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_PER_MINUTE=60
+      - RATE_LIMIT_BURST=20
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - GUNICORN_WORKERS=16
+      - GUNICORN_THREADS=4
+      - MAX_WORKERS=16
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s 
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/resume-api
+      - /tmp/resume-temp:/tmp/resume-temp
+    networks:
+      - resume-network
+
+  # Celery Worker - Background job processing
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: resume-celery-worker
+    command: celery -A resume_agent_template_engine.workers.celery_app worker --loglevel=info --concurrency=32 --max-tasks-per-child=100 --prefetch-multiplier=1
+    environment:
+      - ENVIRONMENT=production
+      - CACHE_ENABLED=false  # Workers don't need cache
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_WORKERS=32
+      - CELERY_CONCURRENCY=8
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/resume-api
+      - /tmp/resume-temp:/tmp/resume-temp
+    networks:
+      - resume-network
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 8G
+        reservations:
+          cpus: '4.0'
+          memory: 4G
+
+  # Flower - Celery monitoring dashboard
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: resume-flower
+    command: celery -A resume_agent_template_engine.workers.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+      - celery-worker
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+  # NGINX - Load balancer and reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: resume-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-cache:/var/cache/nginx
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+networks:
+  resume-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
