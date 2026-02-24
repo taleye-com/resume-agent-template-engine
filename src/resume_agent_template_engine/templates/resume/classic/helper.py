@@ -491,7 +491,7 @@ class ClassicResumeTemplate(TemplateInterface):
         return f"\\begin{{onecolentry}}\n\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
 
     def generate_certifications(self):
-        """Generate the Certifications section with dynamic category support."""
+        """Generate the Certifications section in compact inline format with optional links."""
         # Check multiple possible field names
         certifications = self.get_field_with_fallback(
             self.data, "certifications", ["certificates", "credentials", "licenses"], []
@@ -501,7 +501,7 @@ class ClassicResumeTemplate(TemplateInterface):
 
         # Handle both object (categorized) and array (flat list) formats
         if isinstance(certifications, dict):
-            # Categorized format - dynamically process any categories
+            # Categorized format - display inline with comma separation
             sections = []
             for category, certs in certifications.items():
                 if certs and isinstance(certs, list):
@@ -512,21 +512,63 @@ class ClassicResumeTemplate(TemplateInterface):
                     category_name = category_name.replace("Ai/Ml", "AI/ML")
                     category_name = category_name.replace(" And ", " \\& ")
 
-                    # Add category header with certs as sub-items
-                    sections.append(f"\\item \\textbf{{{category_name}}}:")
-                    sections.append("    \\begin{itemize}[leftmargin=*]")
+                    # Process each certification with optional link
+                    cert_items = []
                     for cert in certs:
-                        sections.append(f"    \\item {cert}")
-                    sections.append("    \\end{itemize}")
+                        cert_text = self._format_certification_with_link(cert)
+                        cert_items.append(cert_text)
+
+                    # Join all certifications with comma separator
+                    certs_text = ", ".join(cert_items)
+                    sections.append(f"\\textbf{{{category_name}}}: {certs_text}")
 
             if sections:
-                bullets = "\n".join(sections)
-                return f"\\begin{{onecolentry}}\\begin{{highlights}}\n{bullets}\n\\end{{highlights}}\\end{{onecolentry}}"
+                # Join all categories with line breaks
+                content = " \\\\\n".join(sections)
+                return f"\\begin{{onecolentry}}\n{content}\n\\end{{onecolentry}}"
             return ""
         else:
-            # Old flat list format - simple bullet list
-            bullets = "\n".join(f"\\item {item}" for item in certifications)
-            return f"\\begin{{onecolentry}}\\begin{{highlights}}\n{bullets}\\end{{highlights}}\\end{{onecolentry}}"
+            # Old flat list format - display as comma-separated inline text
+            cert_items = []
+            for cert in certifications:
+                cert_text = self._format_certification_with_link(cert)
+                cert_items.append(cert_text)
+
+            certs_text = ", ".join(cert_items)
+            return f"\\begin{{onecolentry}}\n{certs_text}\n\\end{{onecolentry}}"
+
+    def _format_certification_with_link(self, cert):
+        """Format a single certification with optional link support.
+
+        Supports:
+        - String: "Certification Name"
+        - Dict: {"name": "Cert Name", "url": "https://..."}
+        - Dict: {"title": "Cert Name", "link": "https://..."}
+        """
+        if isinstance(cert, str):
+            # Simple string certification
+            return cert
+        elif isinstance(cert, dict):
+            # Object with name and optional URL
+            name = self.get_field_with_fallback(
+                cert, "name", ["title", "certification"], ""
+            )
+            url = self.get_field_with_fallback(
+                cert, "url", ["link", "href"], ""
+            )
+
+            if url and name:
+                # Return hyperlinked certification
+                return f"\\href{{{url}}}{{{name}}}"
+            elif name:
+                # Return just the name
+                return name
+            else:
+                # Fallback to string representation
+                return str(cert)
+        else:
+            # Unknown format, convert to string
+            return str(cert)
 
     def generate_technologies_and_skills(self):
         """Generate the Technologies & Skills section."""
@@ -1613,7 +1655,7 @@ class ClassicResumeTemplate(TemplateInterface):
                 f.write(content)
 
             try:
-                subprocess.run(
+                result = subprocess.run(
                     [
                         "pdflatex",
                         "-interaction=nonstopmode",
@@ -1621,8 +1663,8 @@ class ClassicResumeTemplate(TemplateInterface):
                         tex_path,
                     ],
                     check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT,
+                    capture_output=True,
+                    text=True,
                     env=env,
                 )
                 subprocess.run(
@@ -1633,15 +1675,18 @@ class ClassicResumeTemplate(TemplateInterface):
                         tex_path,
                     ],
                     check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.STDOUT,
+                    capture_output=True,
+                    text=True,
                     env=env,
                 )
             except subprocess.CalledProcessError as e:
+                log_output = (e.stdout or "") + (e.stderr or "")
+                # Get last 1000 chars of log for debugging
+                log_tail = log_output[-1000:] if len(log_output) > 1000 else log_output
                 raise LaTeXCompilationException(
-                    details="PDF compilation failed. Ensure pdflatex is installed.",
+                    details=f"PDF compilation failed: {log_tail}",
                     template_name="classic",
-                    context={"return_code": e.returncode},
+                    context={"return_code": e.returncode, "log": log_tail},
                 ) from e
             except FileNotFoundError as e:
                 raise DependencyException(
@@ -1660,5 +1705,33 @@ class ClassicResumeTemplate(TemplateInterface):
                 raise PDFGenerationException(
                     details="PDF output not generated", template_name="classic"
                 )
+
+        return output_path
+
+    # Optional DOCX export using pandoc if available
+    def export_to_docx(self, output_path: str = "output.docx") -> str:
+        content = self.generate_resume()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tex_path = os.path.join(tmpdir, "temp.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            try:
+                subprocess.run(
+                    ["pandoc", tex_path, "-o", output_path],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                )
+            except FileNotFoundError as e:
+                raise DependencyException(
+                    dependency="pandoc",
+                    context={"details": "pandoc not found. Install via brew install pandoc"},
+                ) from e
+            except subprocess.CalledProcessError as e:
+                raise TemplateRenderingException(
+                    template_name="classic",
+                    details=f"pandoc failed with return code {e.returncode}",
+                ) from e
 
         return output_path

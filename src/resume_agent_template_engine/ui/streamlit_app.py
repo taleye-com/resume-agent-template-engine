@@ -245,8 +245,13 @@ projects:
     # Generate button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        output_format = st.selectbox(
+            "Output format",
+            options=["pdf", "docx"],
+            index=0,
+        )
         generate_button = st.button(
-            f"🎯 Generate PDF from {input_format}",
+            f"🎯 Generate {output_format.upper()} from {input_format}",
             type="primary",
             use_container_width=True,
         )
@@ -270,13 +275,17 @@ projects:
                 return
 
             # Generate document
-            with st.spinner("Generating PDF... Please wait..."):
+            with st.spinner(f"Generating {output_format.upper()}... Please wait..."):
+                suffix = ".pdf" if output_format == "pdf" else ".docx"
                 with tempfile.NamedTemporaryFile(
-                    suffix=".pdf", delete=False
+                    suffix=suffix, delete=False
                 ) as tmp_file:
                     output_path = tmp_file.name
 
-                engine.export_to_pdf(document_type, template, data, output_path)
+                if output_format == "pdf":
+                    engine.export_to_pdf(document_type, template, data, output_path)
+                else:
+                    engine.export_to_docx(document_type, template, data, output_path)
 
                 # Read the generated file
                 with open(output_path, "rb") as file:
@@ -288,20 +297,28 @@ projects:
                     .get("name", "document")
                     .replace(" ", "_")
                 )
+                filename = (
+                    f"{document_type}_{template}_{person_name}.pdf"
+                    if output_format == "pdf"
+                    else f"{document_type}_{template}_{person_name}.docx"
+                )
                 st.session_state.generated_file = {
                     "data": file_data,
-                    "filename": f"{document_type}_{template}_{person_name}.pdf",
+                    "filename": filename,
+                    "type": output_format,
                 }
 
                 # Clean up
                 os.unlink(output_path)
 
-                st.success(f"✅ PDF generated successfully from {input_format} data!")
+                st.success(
+                    f"✅ {output_format.upper()} generated successfully from {input_format} data!"
+                )
 
         except ValueError as e:
             st.error(str(e))
         except Exception as e:
-            st.error(f"Error generating PDF: {str(e)}")
+            st.error(f"Error generating {output_format.upper()}: {str(e)}")
 
     # Display download button and PDF preview if file is generated
     if st.session_state.generated_file:
@@ -310,30 +327,36 @@ projects:
         # Download button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
+            mime = (
+                "application/pdf"
+                if st.session_state.generated_file.get("type") == "pdf"
+                else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
             st.download_button(
-                label="📥 Download PDF",
+                label="📥 Download File",
                 data=st.session_state.generated_file["data"],
                 file_name=st.session_state.generated_file["filename"],
-                mime="application/pdf",
+                mime=mime,
                 use_container_width=True,
             )
 
         # PDF preview
-        st.subheader("📄 PDF Preview")
-        try:
-            st.write(
-                "Your generated PDF is ready for download above. Preview may vary depending on your browser's PDF support."
-            )
-            # Display the PDF in an iframe
-            import base64
+        if st.session_state.generated_file.get("type") == "pdf":
+            st.subheader("📄 PDF Preview")
+            try:
+                st.write(
+                    "Your generated PDF is ready for download above. Preview may vary depending on your browser's PDF support."
+                )
+                # Display the PDF in an iframe
+                import base64
 
-            b64_pdf = base64.b64encode(st.session_state.generated_file["data"]).decode(
-                "utf-8"
-            )
-            pdf_display = f'<iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-            st.markdown(pdf_display, unsafe_allow_html=True)
-        except Exception:
-            st.info("PDF preview not available. Please download the file to view it.")
+                b64_pdf = base64.b64encode(st.session_state.generated_file["data"]).decode(
+                    "utf-8"
+                )
+                pdf_display = f'<iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                st.markdown(pdf_display, unsafe_allow_html=True)
+            except Exception:
+                st.info("PDF preview not available. Please download the file to view it.")
 
 
 if __name__ == "__main__":

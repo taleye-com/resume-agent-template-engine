@@ -1,10 +1,12 @@
 import importlib.util
 import logging
 import os
+import asyncio
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
+from concurrent.futures import ThreadPoolExecutor
 
 import yaml
 
@@ -13,6 +15,7 @@ from .exceptions import (
     TemplateNotFoundException,
     TemplateRenderingException,
 )
+from .cache import DocumentCache, CacheConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,7 @@ class OutputFormat(str, Enum):
     PDF = "pdf"
     LATEX = "latex"
     HTML = "html"
+    DOCX = "docx"
 
 
 class TemplateInterface(ABC):
@@ -61,6 +65,17 @@ class TemplateInterface(ABC):
     def export_to_pdf(self, output_path: str) -> str:
         """Export the rendered content to PDF"""
         pass
+
+    # Optional: DOCX export support (implemented by templates that support it)
+    def export_to_docx(self, output_path: str) -> str:
+        """Export the rendered content to DOCX (if supported by template).
+
+        Default implementation raises an error; templates can override.
+        """
+        raise TemplateRenderingException(
+            template_name=self.__class__.__name__,
+            details="DOCX export not supported by this template",
+        )
 
     @property
     @abstractmethod
@@ -259,11 +274,15 @@ class TemplateRegistry:
 
 class TemplateEngine:
     """
-    Central template engine for document generation
+    Central template engine for document generation with async support and caching
     """
 
     def __init__(
-        self, config_path: Optional[str] = None, templates_path: Optional[str] = None
+        self,
+        config_path: Optional[str] = None,
+        templates_path: Optional[str] = None,
+        enable_cache: bool = True,
+        max_workers: int = 4
     ):
         """
         Initialize the template engine
@@ -271,6 +290,8 @@ class TemplateEngine:
         Args:
             config_path: Path to YAML configuration file
             templates_path: Path to templates directory
+            enable_cache: Enable Redis caching for compiled documents
+            max_workers: Maximum number of worker threads for async operations
         """
         self.config = TemplateConfig(config_path)
 
@@ -295,6 +316,18 @@ class TemplateEngine:
                 self.templates_path = config_templates_path
 
         self.registry = TemplateRegistry(self.templates_path)
+
+        # Initialize caching
+        self._cache: Optional[DocumentCache] = None
+        self._cache_enabled = enable_cache
+        self._cache_initialized = False
+
+        # Thread pool for CPU-bound operations
+        self._executor = ThreadPoolExecutor(max_workers=max_workers)
+
+        # Template file content cache (in-memory)
+        self._template_file_cache = {}
+
         available_templates = self.get_available_templates()
         total_templates = (
             sum(len(templates) for templates in available_templates.values())
@@ -304,6 +337,37 @@ class TemplateEngine:
         logger.info(
             f"TemplateEngine initialized with {total_templates} templates from {self.templates_path}"
         )
+
+    async def initialize_cache(self):
+        """Initialize the cache connection (call this in async context)."""
+        if self._cache_enabled and not self._cache_initialized:
+            try:
+                # Check if Redis is available before trying to connect
+                cache_enabled_env = os.getenv("CACHE_ENABLED", "true").lower()
+                if cache_enabled_env == "false":
+                    logger.info("Cache disabled via environment variable")
+                    self._cache = None
+                    self._cache_initialized = False
+                    return
+
+                cache_config = CacheConfig()
+                self._cache = DocumentCache(cache_config)
+                await self._cache.initialize()
+                self._cache_initialized = True
+                logger.info("Document cache initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize cache: {e}. Continuing without cache.")
+                self._cache = None
+                self._cache_initialized = False
+        else:
+            logger.info("Cache initialization skipped (disabled or already initialized)")
+
+    async def close(self):
+        """Close connections and cleanup resources."""
+        if self._cache:
+            await self._cache.close()
+        self._executor.shutdown(wait=True)
+        logger.info("TemplateEngine closed")
 
     def get_available_templates(
         self, document_type: Optional[str] = None
@@ -377,6 +441,9 @@ class TemplateEngine:
             # For PDF, we still return the LaTeX content
             # The actual PDF generation happens in export_to_pdf
             return template.render()
+        elif output_format == OutputFormat.DOCX:
+            # Rendering returns canonical content; DOCX generation happens separately
+            return template.render()
         else:
             raise TemplateRenderingException(
                 template_name=template_name,
@@ -391,7 +458,7 @@ class TemplateEngine:
         output_path: str,
     ) -> str:
         """
-        Export document directly to PDF
+        Export document directly to PDF (synchronous version for backward compatibility)
 
         Args:
             document_type: Type of document
@@ -404,6 +471,145 @@ class TemplateEngine:
         """
         template = self.create_template(document_type, template_name, data)
         return template.export_to_pdf(output_path)
+
+    async def export_to_pdf_async(
+        self,
+        document_type: str,
+        template_name: str,
+        data: dict[str, Any],
+        output_path: str,
+        spacing: str = "normal",
+        use_cache: bool = True
+    ) -> str:
+        """
+        Export document to PDF asynchronously with caching support
+
+        Args:
+            document_type: Type of document
+            template_name: Name of the template
+            data: Document data
+            output_path: Path for output PDF
+            spacing: Layout spacing mode
+            use_cache: Whether to use cache for this request
+
+        Returns:
+            Path to generated PDF
+        """
+        import time
+        start_time = time.time()
+
+        # Try to get from cache first
+        if use_cache and self._cache:
+            cached_pdf = await self._cache.get_pdf(
+                data, template_name, document_type, spacing
+            )
+            if cached_pdf:
+                # Write cached PDF to output path
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(
+                    self._executor,
+                    self._write_bytes_to_file,
+                    output_path,
+                    cached_pdf
+                )
+                elapsed = (time.time() - start_time) * 1000
+                logger.info(f"PDF served from cache in {elapsed:.2f}ms")
+                return output_path
+
+        # Cache miss - generate PDF
+        logger.debug(f"Cache miss - generating PDF for {document_type}/{template_name}")
+
+        # Run PDF generation in thread pool (it's CPU-bound)
+        loop = asyncio.get_event_loop()
+        pdf_path = await loop.run_in_executor(
+            self._executor,
+            self._generate_pdf_sync,
+            document_type,
+            template_name,
+            data,
+            output_path
+        )
+
+        # Cache the generated PDF
+        if use_cache and self._cache:
+            pdf_bytes = await loop.run_in_executor(
+                self._executor,
+                self._read_file_bytes,
+                pdf_path
+            )
+            await self._cache.set_pdf(
+                data, template_name, document_type, pdf_bytes, spacing
+            )
+
+        elapsed = (time.time() - start_time) * 1000
+        logger.info(f"PDF generated and cached in {elapsed:.2f}ms")
+        return pdf_path
+
+    def _generate_pdf_sync(
+        self,
+        document_type: str,
+        template_name: str,
+        data: dict[str, Any],
+        output_path: str
+    ) -> str:
+        """Synchronous PDF generation (called from thread pool)."""
+        template = self.create_template(document_type, template_name, data)
+        return template.export_to_pdf(output_path)
+
+    def _write_bytes_to_file(self, file_path: str, content: bytes):
+        """Write bytes to file (called from thread pool)."""
+        with open(file_path, 'wb') as f:
+            f.write(content)
+
+    def _read_file_bytes(self, file_path: str) -> bytes:
+        """Read file as bytes (called from thread pool)."""
+        with open(file_path, 'rb') as f:
+            return f.read()
+
+    def export_to_docx(
+        self,
+        document_type: str,
+        template_name: str,
+        data: dict[str, Any],
+        output_path: str,
+    ) -> str:
+        """Export document directly to DOCX if supported by template."""
+        template = self.create_template(document_type, template_name, data)
+        return template.export_to_docx(output_path)
+
+    def get_cache_metrics(self) -> dict[str, Any]:
+        """
+        Get cache performance metrics.
+
+        Returns:
+            Dictionary with cache statistics
+        """
+        if self._cache:
+            return self._cache.get_metrics()
+        return {
+            "enabled": False,
+            "connected": False,
+            "message": "Cache not initialized"
+        }
+
+    async def invalidate_cache(
+        self,
+        data: dict[str, Any],
+        template_name: str,
+        document_type: str,
+        spacing: str = "normal"
+    ) -> int:
+        """
+        Invalidate cached documents for specific data/template combination.
+
+        Returns:
+            Number of cache entries invalidated
+        """
+        if self._cache:
+            return await self._cache.invalidate_document(
+                data, template_name, document_type, spacing
+            )
+        return 0
 
     def get_template_info(
         self, document_type: str, template_name: str
