@@ -474,3 +474,30 @@ class ClassicCoverLetterTemplate(TemplateInterface):
                 )
 
         return output_path
+
+    def export_to_docx(self, output_path: str = "output.docx") -> str:
+        content = self.generate_cover_letter()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tex_path = os.path.join(tmpdir, "temp.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            try:
+                subprocess.run(
+                    ["pandoc", tex_path, "-o", output_path],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                )
+            except FileNotFoundError as e:
+                raise DependencyException(
+                    dependency="pandoc",
+                    context={"details": "pandoc not found. Install via brew install pandoc"},
+                ) from e
+            except subprocess.CalledProcessError as e:
+                raise TemplateRenderingException(
+                    template_name="classic_cover_letter",
+                    details=f"pandoc failed with return code {e.returncode}",
+                ) from e
+
+        return output_path

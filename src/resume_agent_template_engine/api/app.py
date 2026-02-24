@@ -795,13 +795,18 @@ async def generate_document(
     """
     try:
         # Choose validation method based on request
+        # Convert Pydantic model to dict if needed (Union type may parse into model)
+        raw_data = request.data
+        if hasattr(raw_data, "dict"):
+            raw_data = raw_data.dict()
+
         if request.ultra_validation:
             # Use ultra validation with normalization and sanitization
-            data_to_use = ultra_validate_and_normalize_data(request.data)
+            data_to_use = ultra_validate_and_normalize_data(raw_data)
         else:
             # Use original simple validation
-            validate_resume_data(request.data)
-            data_to_use = request.data
+            validate_resume_data(raw_data)
+            data_to_use = raw_data
 
         # Initialize template engine
         engine = TemplateEngine()
@@ -850,7 +855,7 @@ async def generate_document(
 
             # Determine filename based on document type
             person_name = (
-                request.data.get("personalInfo", {})
+                raw_data.get("personalInfo", {})
                 .get("name", "output")
                 .replace(" ", "_")
             )

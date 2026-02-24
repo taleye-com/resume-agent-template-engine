@@ -36,6 +36,7 @@
 \usepackage{ifthen}
 \usepackage{needspace}
 \usepackage{iftex}
+\usepackage{multicol}
 
 % Ensure generated PDF is ATS parsable:
 \ifPDFTeX
@@ -149,6 +150,11 @@
 
 % AND separator
 \newcommand{\AND}{\,|\,}
+
+% Certification item with icon (compact)
+\newcommand{\certitem}[2]{%
+    \small{[#1] #2}%
+}
 
 \begin{document}
     %========================

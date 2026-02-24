@@ -302,25 +302,125 @@ class TwoColumnResumeTemplate(TemplateInterface):
 
         return "\n".join(education_lines)
 
+    def _extract_cert_icon(self, cert_text: str) -> tuple[str, str]:
+        """
+        Extract source icon from certification text.
+        Returns: (icon, clean_name)
+        """
+        # Icon mapping
+        icon_map = {
+            "linkedin": "LI",
+            "hackerrank": "HR",
+            "workato": "WK",
+            "coursera": "CR",
+            "udemy": "UD",
+            "edx": "EX",
+            "aws": "AWS",
+            "google": "GG",
+            "microsoft": "MS",
+        }
+
+        cert_lower = cert_text.lower()
+
+        # Check for source in parentheses
+        if "(" in cert_text and ")" in cert_text:
+            # Extract source from parentheses
+            start_idx = cert_text.rfind("(")
+            end_idx = cert_text.rfind(")")
+            source = cert_text[start_idx + 1 : end_idx].strip().lower()
+            clean_name = cert_text[:start_idx].strip()
+
+            # Map source to icon
+            for key, icon in icon_map.items():
+                if key in source:
+                    return icon, clean_name
+
+        # Check for dash-separated source
+        if " - " in cert_text:
+            parts = cert_text.rsplit(" - ", 1)
+            if len(parts) == 2:
+                clean_name = parts[0].strip()
+                source = parts[1].strip().lower()
+
+                for key, icon in icon_map.items():
+                    if key in source:
+                        return icon, clean_name
+
+        # Default: no icon found, return original
+        return "", cert_text
+
+    def _format_category_name(self, category_key: str) -> str:
+        """
+        Format category key to display name.
+        e.g., 'ai_ml' -> 'AI ML', 'cloud_architecture' -> 'Cloud Architecture'
+        """
+        # Replace underscores with spaces and title case each word
+        return category_key.replace("_", " ").title()
+
     def generate_sidebar_certifications(self) -> str:
-        """Generate sidebar certifications section"""
+        """Generate sidebar certifications section in compact comma-separated format"""
         certifications = self.get_field_with_fallback(
-            self.data, "certifications", ["certificates", "credentials", "licenses"], []
+            self.data, "certifications", ["certificates", "credentials", "licenses"], {}
         )
 
         if not certifications:
             return ""
 
-        cert_lines = []
-        cert_lines.append(r"{\large\bfseries\MakeUppercase{Certifications}}")
-        cert_lines.append(r"\vspace{0.2cm}")
-        cert_lines.append(r"\hrule")
-        cert_lines.append(r"\vspace{0.3cm}")
+        output = []
+        output.append(r"{\large\bfseries\MakeUppercase{Certifications}}")
+        output.append(r"\vspace{0.2cm}")
+        output.append(r"\hrule")
+        output.append(r"\vspace{0.2cm}")
 
-        for cert in certifications:
-            cert_lines.append(r"\skillslist{" + cert + r"}")
+        # Handle dictionary format: {"ai_ml": [...], "cloud": [...]}
+        if isinstance(certifications, dict):
+            for category_key, items in certifications.items():
+                if not items or not isinstance(items, list):
+                    continue
 
-        return "\n".join(cert_lines)
+                category_name = self._format_category_name(category_key)
+
+                # Extract all certification names
+                cert_names = []
+                for cert in items:
+                    _, clean_name = self._extract_cert_icon(str(cert))
+                    cert_names.append(clean_name)
+
+                # Create single paragraph for category
+                output.append(r"\noindent\textbf{\small " + category_name + r":} ")
+                output.append(r"\small " + ", ".join(cert_names))
+                output.append(r"\\[0.3cm]")
+
+        # Handle list format: [{"category": "AI", "items": [...]}, ...]
+        elif isinstance(certifications, list):
+            if certifications and isinstance(certifications[0], dict):
+                for cert_group in certifications:
+                    category = cert_group.get("category", "")
+                    items = cert_group.get("items", [])
+
+                    if not items:
+                        continue
+
+                    # Extract all certification names
+                    cert_names = []
+                    for cert in items:
+                        _, clean_name = self._extract_cert_icon(str(cert))
+                        cert_names.append(clean_name)
+
+                    # Create single paragraph for category
+                    output.append(r"\noindent\textbf{\small " + str(category) + r":} ")
+                    output.append(r"\small " + ", ".join(cert_names))
+                    output.append(r"\\[0.3cm]")
+            else:
+                # Flat list - all certs in one paragraph
+                cert_names = []
+                for cert in certifications:
+                    _, clean_name = self._extract_cert_icon(str(cert))
+                    cert_names.append(clean_name)
+
+                output.append(r"\small " + ", ".join(cert_names))
+
+        return "\n".join(output)
 
     def generate_professional_summary(self) -> str:
         """Generate professional summary section"""
@@ -587,5 +687,32 @@ class TwoColumnResumeTemplate(TemplateInterface):
                 raise PDFGenerationException(
                     details="PDF output not generated", template_name="two_column"
                 )
+
+        return output_path
+
+    def export_to_docx(self, output_path: str = "output.docx") -> str:
+        content = self.generate_resume()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tex_path = os.path.join(tmpdir, "temp.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            try:
+                subprocess.run(
+                    ["pandoc", tex_path, "-o", output_path],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                )
+            except FileNotFoundError as e:
+                raise DependencyException(
+                    dependency="pandoc",
+                    context={"details": "pandoc not found. Install via brew install pandoc"},
+                ) from e
+            except subprocess.CalledProcessError as e:
+                raise TemplateRenderingException(
+                    template_name="two_column",
+                    details=f"pandoc failed with return code {e.returncode}",
+                ) from e
 
         return output_path

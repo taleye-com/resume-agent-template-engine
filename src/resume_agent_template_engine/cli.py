@@ -263,6 +263,13 @@ def generate_document(
                 f.write(content)
             print(f"LaTeX content generated: {output_path}")
 
+        elif output_format.lower() == "docx":
+            # Generate DOCX (if supported by the selected template)
+            result_path = engine.export_to_docx(
+                document_type, template_name, data, output_path
+            )
+            print(f"DOCX generated successfully: {result_path}")
+
         else:
             print(f"Error: Unsupported output format: {output_format}")
             sys.exit(1)
@@ -340,7 +347,7 @@ Examples:
     generate_parser.add_argument(
         "--format",
         "-f",
-        choices=["pdf", "latex"],
+        choices=["pdf", "latex", "docx"],
         default="pdf",
         help="Output format (default: pdf)",
     )
